@@ -6,6 +6,7 @@ import type {
   HttpResponseError,
   ListQueryParams,
   ApiWhereOption,
+  TicketDirectAndCashPurchaseFilters,
 } from "./types";
 
 // Réexporté pour compatibilité : le code existant importe `ApiError` depuis
@@ -41,9 +42,11 @@ export interface RequestOptions {
 /** Instance axios unique, pointant vers le proxy authentifié `/api/backend`. */
 const http = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true, // ← ajoute cette ligne
   // On gère nous-mêmes les codes d'erreur (via ApiError) plutôt que de
   // laisser axios lever une exception générique sur les statuts >= 400.
   validateStatus: () => true,
+
 });
 
 /** Version "brute" d'une requête, exposant aussi la Response (headers inclus). */
@@ -178,7 +181,7 @@ export function downloadBlob(blob: Blob, filename: string) {
 }
 
 export const apiClient = {
-  get: <T>(path: string, options?: RequestOptions) =>
+  get: <T>(path: string, params: TicketDirectAndCashPurchaseFilters | undefined, options?: RequestOptions) =>
     request<T>("GET", path, undefined, options),
   /** Téléchargement binaire (export Excel, impressions PDF) -- voir `requestBlob`. */
   getBlob: (path: string, options?: RequestOptions) => requestBlob(path, options),
