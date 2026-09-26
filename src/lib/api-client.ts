@@ -6,7 +6,6 @@ import type {
   HttpResponseError,
   ListQueryParams,
   ApiWhereOption,
-  TicketDirectAndCashPurchaseFilters,
 } from "./types";
 
 // Réexporté pour compatibilité : le code existant importe `ApiError` depuis
@@ -181,7 +180,16 @@ export function downloadBlob(blob: Blob, filename: string) {
 }
 
 export const apiClient = {
-  get: <T>(path: string, params: TicketDirectAndCashPurchaseFilters | undefined, options?: RequestOptions) =>
+  /**
+   * CORRECTIF 26/09/2026 (Boris : "les filtres ne fonctionnent pas") : la
+   * signature avait été changée en `(path, params, options)` et le 2e
+   * argument était ignoré -- or TOUS les appelants passent `{ params }` en
+   * 2e position (resources/index.ts, crud-factory.ts). Résultat : aucun
+   * query param (filtres, dates, pagination, tri, codeCl, typeProduitFilter)
+   * n'était jamais envoyé sur les requêtes GET JSON. Les exports (getBlob)
+   * n'étaient pas touchés. Signature rétablie : `(path, options)`.
+   */
+  get: <T>(path: string, options?: RequestOptions) =>
     request<T>("GET", path, undefined, options),
   /** Téléchargement binaire (export Excel, impressions PDF) -- voir `requestBlob`. */
   getBlob: (path: string, options?: RequestOptions) => requestBlob(path, options),
