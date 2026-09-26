@@ -48,6 +48,20 @@ const http = axios.create({
 
 });
 
+/**
+ * CORRECTIF 26/09/2026 (Boris : "No auth token") : un 401 sur une route
+ * métier signifie que le cookie de session est absent ou expiré. Plutôt que
+ * d'afficher l'erreur brute dans la page (l'UI restait "connectée" grâce à
+ * l'état Redux en mémoire), on renvoie vers /login. Les routes `auth/*`
+ * (login, hydratation `auth/user`...) gèrent leur 401 elles-mêmes.
+ */
+function redirectToLoginOnExpiredSession(path: string) {
+  if (typeof window === "undefined") return;
+  if (/^\/?auth\//.test(path)) return;
+  if (window.location.pathname.startsWith("/login")) return;
+  window.location.href = "/login";
+}
+
 /** Version "brute" d'une requête, exposant aussi la Response (headers inclus). */
 async function requestRaw<T>(
   method: "GET" | "POST" | "PATCH" | "DELETE" | "PUT",
@@ -97,6 +111,8 @@ async function requestRaw<T>(
   if (response.status === 205 || response.status === 204) {
     return { data: undefined as T, response };
   }
+
+  if (response.status === 401) redirectToLoginOnExpiredSession(path);
 
   if (response.status >= 400) {
     throw new ApiError(response.status, response.data as HttpResponseError | undefined);
@@ -149,6 +165,8 @@ async function requestBlob(path: string, options: RequestOptions = {}): Promise<
       infoURL: "",
     });
   }
+
+  if (response.status === 401) redirectToLoginOnExpiredSession(path);
 
   if (response.status >= 400) {
     // Une erreur renvoyée en JSON arrive ici comme un Blob de type

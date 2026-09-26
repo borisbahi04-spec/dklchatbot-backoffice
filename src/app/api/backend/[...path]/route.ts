@@ -45,6 +45,24 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? null;
 
+  // CORRECTIF 26/09/2026 (Boris : "No auth token") : sans cookie de session,
+  // inutile d'appeler le backend -- passport-jwt répondrait "No auth token",
+  // message incompréhensible pour l'utilisateur. On renvoie un 401 explicite,
+  // que `lib/api-client.ts` intercepte pour renvoyer vers /login.
+  const isPublicAuthRoute = isLogin || targetPath === "auth/user" || targetPath.startsWith("auth/forgot") || targetPath.startsWith("auth/reset");
+  if (!token && !isPublicAuthRoute) {
+    return NextResponse.json(
+      {
+        code: 401,
+        message: "Session absente ou expirée. Veuillez vous reconnecter.",
+        description: "Aucun cookie de session (chatbot_session_token) reçu par le proxy /api/backend.",
+        timestamp: new Date().toISOString(),
+        infoURL: "",
+      },
+      { status: 401 }
+    );
+  }
+
   const headers: Record<string, string> = { Accept: "application/json" };
   const contentType = req.headers.get("content-type");
   if (contentType) headers["Content-Type"] = contentType;
@@ -82,9 +100,9 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   }
 
   if (backendResponse.status === 204 || backendResponse.status === 205) {
-    if (isLogout) cookieStore.delete(SESSION_COOKIE_NAME);
-
-    return new NextResponse(null, { status: backendResponse.status });
+    const res = new NextResponse(null, { status: backendResponse.status });
+    if (isLogout) res.cookies.delete(SESSION_COOKIE_NAME);
+    return res;
   }
 
   // Réponses BINAIRES (évolution "Gestion des tickets" du 19/09/2026 :
@@ -113,15 +131,7 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
 
   if (isLogin && backendResponse.ok) {
     const loginToken = extractToken(data, backendResponse);
-    if (loginToken) {
-      cookieStore.set(SESSION_COOKIE_NAME, loginToken, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7,
-      });
-    } else {
+    if (!loginToken) {
       // `extractToken` n'a trouvé le jeton ni dans les champs habituels du
       // corps (`token`/`accessToken`/`jwt`) ni dans les en-têtes usuels
       // (`x-user-claims`/`x-auth-token`/`authorization`) : aucun cookie de
@@ -145,14 +155,42 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
     delete safeData.accessToken;
     delete safeData.jwt;
 
-    return NextResponse.json(safeData, { status: backendResponse.status });
+    const res = NextResponse.json(safeData, { status: backendResponse.status });
+    if (loginToken) {
+      // CORRECTIF 26/09/2026 (Boris : "No auth token" sur toutes les requêtes
+      // après connexion) :
+      // 1. `secure` dépendait de NODE_ENV : avec `next build && next start`
+      //    (NODE_ENV=production) servi en HTTP (IP / nom de machine, pas
+      //    https), le navigateur REFUSE silencieusement un cookie `Secure` --
+      //    le login "réussit" (la session arrive dans le JSON, Redux est
+      //    rempli) mais aucune requête suivante ne porte le jeton. On se base
+      //    désormais sur le protocole réel de la requête.
+      // 2. Cookie posé directement sur la réponse renvoyée (plutôt que via
+      //    `cookies().set()` puis un nouveau NextResponse), pour être sûr que
+      //    l'en-tête Set-Cookie parte bien avec CETTE réponse.
+      res.cookies.set(SESSION_COOKIE_NAME, loginToken, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: isHttpsRequest(req),
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
+    return res;
   }
 
+  const res = NextResponse.json(data, { status: backendResponse.status });
   if (isLogout) {
-    cookieStore.delete(SESSION_COOKIE_NAME);
+    res.cookies.delete(SESSION_COOKIE_NAME);
   }
+  return res;
+}
 
-  return NextResponse.json(data, { status: backendResponse.status });
+/** true si le navigateur parle réellement en HTTPS (direct ou derrière un reverse-proxy). */
+function isHttpsRequest(req: NextRequest): boolean {
+  const forwarded = req.headers.get("x-forwarded-proto");
+  if (forwarded) return forwarded.split(",")[0].trim() === "https";
+  return req.nextUrl.protocol === "https:";
 }
 
 function safeJsonParse(text: string): unknown {
