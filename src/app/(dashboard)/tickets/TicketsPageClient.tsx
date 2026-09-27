@@ -323,6 +323,11 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
   const [isExportingPivotPdf, setIsExportingPivotPdf] = useState(false);
   const [isExportingFlashExcel, setIsExportingFlashExcel] = useState(false);
   const [isExportingFlashPdf, setIsExportingFlashPdf] = useState(false);
+  // Exports "Résumé Paiements" (Excel/PDF) et "Tickets payés" (Excel) --
+  // demande de Boris, 27/09/2026.
+  const [isExportingSummaryExcel, setIsExportingSummaryExcel] = useState(false);
+  const [isExportingSummaryPdf, setIsExportingSummaryPdf] = useState(false);
+  const [isExportingPaidExcel, setIsExportingPaidExcel] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const skipNextLoad = useRef(Boolean(initialData));
@@ -437,19 +442,7 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
         // indépendantes et combinables (dateRegime et/ou dateTransport) :
         // voir `TicketService.getPurchaseSummary` côté backend.
         if (tab === "purchase-summary") {
-          const typeOperation =
-            purchaseSummaryType === "direct"
-              ? [TicketTypeOperationEnum.DirectPurchase]
-              : purchaseSummaryType === "comptant"
-                ? [TicketTypeOperationEnum.CashPurchase]
-                : [TicketTypeOperationEnum.DirectPurchase, TicketTypeOperationEnum.CashPurchase];
-          const summary = await ticketsApi.purchaseSummary({
-            typeOperation,
-            dateRegimeDebut: purchaseSummaryDateRegimeDebut,
-            dateRegimeFin: purchaseSummaryDateRegimeFin,
-            dateTransportDebut: purchaseSummaryDateTransportDebut,
-            dateTransportFin: purchaseSummaryDateTransportFin,
-          });
+          const summary = await ticketsApi.purchaseSummary(buildPurchaseSummaryParams());
           if (!cancelled) setPurchaseSummaryData(summary);
           return;
         }
@@ -465,13 +458,7 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
         // onglets liste.
         if (tab === "paid") {
           const res = await ticketsApi.paidPurchase({
-            ...filters,
-            dateRegimeDebut: paidDateRegimeDebut,
-            dateRegimeFin: paidDateRegimeFin,
-            dateTransportDebut: paidDateTransportDebut,
-            dateTransportFin: paidDateTransportFin,
-            sortBy: sortBy || undefined,
-            sortDirection,
+            ...buildPaidParams(),
             page,
             pageSize: PAGE_SIZE,
           });
@@ -545,6 +532,69 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
     paidDateTransportDebut,
     paidDateTransportFin,
   ]);
+
+  /** Paramètres de l'onglet "Résumé Paiements" -- partagés par l'écran et ses exports (27/09/2026). */
+  function buildPurchaseSummaryParams() {
+    const typeOperation =
+      purchaseSummaryType === "direct"
+        ? [TicketTypeOperationEnum.DirectPurchase]
+        : purchaseSummaryType === "comptant"
+          ? [TicketTypeOperationEnum.CashPurchase]
+          : [TicketTypeOperationEnum.DirectPurchase, TicketTypeOperationEnum.CashPurchase];
+    return {
+      typeOperation,
+      dateRegimeDebut: purchaseSummaryDateRegimeDebut,
+      dateRegimeFin: purchaseSummaryDateRegimeFin,
+      dateTransportDebut: purchaseSummaryDateTransportDebut,
+      dateTransportFin: purchaseSummaryDateTransportFin,
+    };
+  }
+
+  /** Paramètres de l'onglet "Tickets payés" (hors pagination) -- partagés par la liste et l'export (27/09/2026). */
+  function buildPaidParams(): TicketDirectAndCashPurchaseFilters {
+    return {
+      ...filters,
+      dateRegimeDebut: paidDateRegimeDebut,
+      dateRegimeFin: paidDateRegimeFin,
+      dateTransportDebut: paidDateTransportDebut,
+      dateTransportFin: paidDateTransportFin,
+      sortBy: sortBy || undefined,
+      sortDirection,
+    };
+  }
+
+  async function handleExportSummaryExcel() {
+    setIsExportingSummaryExcel(true);
+    try {
+      await ticketsApi.purchaseSummaryExportExcel(buildPurchaseSummaryParams());
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Erreur lors de l'export Excel.");
+    } finally {
+      setIsExportingSummaryExcel(false);
+    }
+  }
+
+  async function handleExportSummaryPdf() {
+    setIsExportingSummaryPdf(true);
+    try {
+      await ticketsApi.purchaseSummaryExportPdf(buildPurchaseSummaryParams());
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Erreur lors de l'export PDF.");
+    } finally {
+      setIsExportingSummaryPdf(false);
+    }
+  }
+
+  async function handleExportPaidExcel() {
+    setIsExportingPaidExcel(true);
+    try {
+      await ticketsApi.paidPurchaseExportExcel(buildPaidParams());
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Erreur lors de l'export Excel.");
+    } finally {
+      setIsExportingPaidExcel(false);
+    }
+  }
 
   function updateDraft(key: string, value: string) {
     setDraft((f) => ({ ...f, [key]: value === "" ? undefined : value }));
@@ -863,6 +913,25 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
         )}
         {TAB_TO_EXPORT_VALUE[tab] && (
           <Button variant="secondary" size="sm" onClick={handleExport} isLoading={isExporting}>
+            <Download className="h-4 w-4" /> Exporter Excel
+          </Button>
+        )}
+        {/* Onglet "Résumé Paiements" -- export Excel / PDF (demande de
+            Boris, 27/09/2026), mêmes filtres que le tableau affiché. */}
+        {tab === "purchase-summary" && (
+          <>
+            <Button variant="secondary" size="sm" onClick={handleExportSummaryExcel} isLoading={isExportingSummaryExcel}>
+              <Download className="h-4 w-4" /> Exporter Excel
+            </Button>
+            <Button variant="secondary" size="sm" onClick={handleExportSummaryPdf} isLoading={isExportingSummaryPdf}>
+              <Download className="h-4 w-4" /> Exporter PDF
+            </Button>
+          </>
+        )}
+        {/* Onglet "Tickets payés" -- export Excel (demande de Boris,
+            27/09/2026), mêmes filtres que la liste, sans pagination. */}
+        {tab === "paid" && (
+          <Button variant="secondary" size="sm" onClick={handleExportPaidExcel} isLoading={isExportingPaidExcel}>
             <Download className="h-4 w-4" /> Exporter Excel
           </Button>
         )}

@@ -201,6 +201,40 @@ export const ticketsApi = {
   }) => apiClient.get<MonthlyPurchaseResponse>("/ticket/purchase-summary", { params }),
 
   /**
+   * Export Excel / PDF de l'onglet "Résumé Paiements" (demande de Boris,
+   * 27/09/2026) -- `GET /ticket/purchase-summary/export/excel|pdf`, mêmes
+   * paramètres que `purchaseSummary` ci-dessus.
+   */
+  purchaseSummaryExportExcel: async (
+    params?: TicketDirectAndCashPurchaseFilters,
+    filename = "resume-paiements.xlsx",
+  ) => {
+    const blob = await apiClient.getBlob("/ticket/purchase-summary/export/excel", { params });
+    downloadBlob(blob, filename);
+  },
+
+  purchaseSummaryExportPdf: async (
+    params?: TicketDirectAndCashPurchaseFilters,
+    filename = "resume-paiements.pdf",
+  ) => {
+    const blob = await apiClient.getBlob("/ticket/purchase-summary/export/pdf", { params });
+    downloadBlob(blob, filename);
+  },
+
+  /**
+   * Export Excel de l'onglet "Tickets payés" (demande de Boris, 27/09/2026)
+   * -- `GET /ticket/paid-purchase/export/excel`, mêmes paramètres que
+   * `paidPurchase` (sans pagination).
+   */
+  paidPurchaseExportExcel: async (
+    params?: TicketDirectAndCashPurchaseFilters,
+    filename = "tickets-payes.xlsx",
+  ) => {
+    const blob = await apiClient.getBlob("/ticket/paid-purchase/export/excel", { params });
+    downloadBlob(blob, filename);
+  },
+
+  /**
    * Onglet "PI & PV" -- `GET /ticket/pivot-pi-pv` (demande de Boris,
    * 20/09/2026) : tableau croisé Date sortie x Centre Logistique x
    * typeProduit (PI/PV), voir `PiPvPivotResponse`. Mis à jour le 20/09/2026

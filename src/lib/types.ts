@@ -629,6 +629,9 @@ export interface PiPvPivotResponse {
   grandTotalPi: number;
   grandTotalPv: number;
   grandTotal: number;
+  /** Plage appliquée (dateSortie) renvoyée par le backend -- ajouté 27/09/2026. */
+  dateDebut?: string;
+  dateFin?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -657,6 +660,9 @@ export interface FlashPivotResponse {
   rows: FlashPivotRow[];
   grandTotalsByType: Record<string, number>;
   grandTotal: number;
+  /** Plage appliquée (dateSortie) renvoyée par le backend -- ajouté 27/09/2026. */
+  dateDebut?: string;
+  dateFin?: string;
 }
 
 /* ------------------------------------------------------------------ */

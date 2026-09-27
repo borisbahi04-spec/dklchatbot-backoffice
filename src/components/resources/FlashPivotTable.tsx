@@ -20,7 +20,11 @@ function numberCell(value: number): string {
   return value.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
 }
 
+// CORRECTIF 27/09/2026 : `value` est une clé "YYYY-MM-DD" -- `new Date()`
+// la lit en UTC et peut afficher la veille selon le fuseau du navigateur.
 function formatDate(value: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value ?? "");
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleDateString("fr-FR");
@@ -41,7 +45,9 @@ export function FlashPivotTable({
     );
   }
 
-  if (!data || data.rows.length === 0) {
+  // Depuis le 27/09/2026 le backend renvoie une ligne par jour de la plage
+  // (même vides) : "aucune donnée" = aucun centre logistique trouvé.
+  if (!data || data.rows.length === 0 || data.clCodes.length === 0) {
     return (
       <div className="rounded-lg border border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
         Aucune donnée pour cette période.
