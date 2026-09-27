@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { APPLICATION_ID } from "@/lib/config";
 import { SESSION_COOKIE_NAME } from "@/lib/server/backend-client";
+import { decryptLoginPayload, LoginDecryptError } from "@/lib/server/login-crypto";
 
 /**
  * Proxy authentifié navigateur -> backend.
@@ -73,7 +74,26 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   }
 
   const hasBody = req.method !== "GET" && req.method !== "HEAD";
-  const body = hasBody ? await req.text() : undefined;
+  let body = hasBody ? await req.text() : undefined;
+
+  // AJOUTÉ 27/09/2026 (Boris : identifiants lisibles dans DevTools >
+  // Payload) : le navigateur n'envoie plus que `{kid, payload}` chiffré
+  // (voir lib/login-encrypt.ts). On déchiffre ICI, côté serveur, et seul
+  // cet appel serveur -> backend porte `{username, password}` en clair.
+  // Un login non chiffré est refusé.
+  if (isLogin) {
+    try {
+      const credentials = decryptLoginPayload(body ? safeJsonParse(body) : undefined);
+      body = JSON.stringify(credentials);
+      headers["Content-Type"] = "application/json";
+    } catch (err) {
+      const message = err instanceof LoginDecryptError ? err.message : "Requête de connexion invalide.";
+      return NextResponse.json(
+        { code: 400, message, description: message, timestamp: new Date().toISOString(), infoURL: "" },
+        { status: 400 }
+      );
+    }
+  }
   const url = `${backendBaseUrl}/${targetPath}${req.nextUrl.search}`;
 
   let backendResponse: Response;
