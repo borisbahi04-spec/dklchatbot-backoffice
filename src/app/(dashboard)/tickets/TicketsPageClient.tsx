@@ -13,6 +13,8 @@ import { TicketDetailModal } from "@/components/resources/TicketDetailModal";
 import { PiPvPivotTable } from "@/components/resources/PiPvPivotTable";
 import { MonthlyPurchaseTable } from "@/components/resources/MonthlyPurchaseTable";
 import { FlashPivotTable } from "@/components/resources/FlashPivotTable";
+import { SupplierActivityPanel } from "@/components/resources/SupplierActivityPanel";
+import { QuarterlyBonusPanel } from "@/components/resources/QuarterlyBonusPanel";
 import { ticketsApi } from "@/lib/resources";
 import { ApiError } from "@/lib/api-client";
 import { useAbility } from "@/lib/permissions/AbilityContext";
@@ -48,7 +50,10 @@ type TabKey =
   | "flash"
   | "tricycle"
   | "purchase-summary"
-  | "paid";
+  | "paid"
+  | "supplier-activity"
+  | "transporter-activity"
+  | "quarterly-bonus";
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: "all", label: "Tous les tickets" },
@@ -97,6 +102,17 @@ const tabs: { key: TabKey; label: string }[] = [
   // nécessitaient aucun nouveau champ : déjà dans le FilterBar générique
   // standard (`TEXT_FIELDS`), qui s'affiche normalement pour cet onglet.
   { key: "paid", label: "Tickets payés" },
+  // AJOUTÉ (demande Boris, 01/10/2026) : période de référence vs période de
+  // comparaison, détection des planteurs/fournisseurs devenus inactifs --
+  // composant autonome, voir SupplierActivityPanel.tsx.
+  { key: "supplier-activity", label: "Analyse d'activité planteurs" },
+  // AJOUTÉ (Boris, 01/10/2026 : "fait de même pour les transporteurs") :
+  // même composant, dimension transporteur (GET /ticket/transporter-activity).
+  { key: "transporter-activity", label: "Analyse d'activité transporteurs" },
+  // AJOUTÉ (Boris, 01/10/2026, modèle "BONUS PREMIER TRIMESTRE 2026") :
+  // quantité par planteur et par mois sur un trimestre ou une période libre
+  // -- voir QuarterlyBonusPanel.tsx.
+  { key: "quarterly-bonus", label: "Bonus trimestriel" },
 ];
 
 /**
@@ -408,6 +424,9 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
       setIsLoading(true);
       setError(null);
       try {
+        // Onglet "Analyse d'activité" : chargé par SupplierActivityPanel lui-même.
+        if (tab === "supplier-activity" || tab === "transporter-activity" || tab === "quarterly-bonus") return;
+
         // Onglet "PI & PV" -- forme de réponse totalement différente
         // (tableau croisé, pas une liste paginée de tickets) : chargé à part,
         // sans passer par `filters`/pagination/tri (non pertinents ici).
@@ -846,6 +865,15 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
         ))}
       </div>
 
+      {tab === "quarterly-bonus" ? (
+        <QuarterlyBonusPanel />
+      ) : tab === "supplier-activity" || tab === "transporter-activity" ? (
+        <SupplierActivityPanel
+          key={tab}
+          entity={tab === "transporter-activity" ? "TRANSPORTEUR" : "PLANTEUR"}
+        />
+      ) : (
+      <>
       {tab === "tricycle" && (
         <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
           Tickets tricycle dont le poids net atteint ou dépasse le seuil défini dans Réglages
@@ -1249,6 +1277,8 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
             onChange={setPage}
           />
         </>
+      )}
+      </>
       )}
 
       <TicketDetailModal

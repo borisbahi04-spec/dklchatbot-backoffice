@@ -786,3 +786,126 @@ export interface ChatResponseDto {
   message: string;
   data?: unknown;
 }
+
+/* =====================================================================
+   Onglet "Analyse d'activité des planteurs / fournisseurs" (01/10/2026)
+   Miroir de SupplierActivityResponse côté backend
+   (services/ticket/supplier-activity.ts).
+   ===================================================================== */
+export type SupplierActivityStatus = "ACTIF" | "A_SURVEILLER" | "INACTIF";
+export type SupplierActivityStatusFilter = SupplierActivityStatus | "TOUS";
+/** Dimension analysée : onglet planteurs ou onglet transporteurs. */
+export type ActivityEntity = "PLANTEUR" | "TRANSPORTEUR";
+
+export type SupplierActivityParams = {
+  referenceDebut: string; // YYYY-MM-DD
+  referenceFin: string;
+  comparaisonDebut: string;
+  comparaisonFin: string;
+  statut?: SupplierActivityStatusFilter;
+  seuilBaisse?: number;
+  codePlanteur?: string;
+  nomPlanteur?: string;
+  codeTransporteur?: string;
+  nomTransporteur?: string;
+  typeVehicule?: string;
+  search?: string;
+  codeCl?: string;
+  cl?: string;
+  /** Valeurs séparées par des virgules (ex: "PI,PV"). */
+  typeProduit?: string;
+  codeArticle?: string;
+  origine?: string;
+  /** Valeurs séparées par des virgules. */
+  typeOperation?: string;
+  ticketType?: string;
+};
+
+export interface SupplierActivityRow {
+  /** Code planteur ou transporteur selon l'onglet. */
+  code: string;
+  nom: string | null;
+  derniereLivraison: string | null;
+  joursDepuisDerniereLivraison: number | null;
+  refLivraisons: number;
+  refQuantite: number;
+  refMontant: number;
+  cmpLivraisons: number;
+  cmpQuantite: number;
+  cmpMontant: number;
+  variationPct: number | null;
+  statut: SupplierActivityStatus;
+}
+
+export interface SupplierActivityResponse {
+  entite: ActivityEntity;
+  referenceDebut: string;
+  referenceFin: string;
+  comparaisonDebut: string;
+  comparaisonFin: string;
+  seuilBaisse: number;
+  statut: SupplierActivityStatusFilter;
+  dateCalcul: string;
+  summary: { total: number; actifs: number; aSurveiller: number; inactifs: number };
+  totals: {
+    refLivraisons: number;
+    refQuantite: number;
+    refMontant: number;
+    cmpLivraisons: number;
+    cmpQuantite: number;
+    cmpMontant: number;
+  };
+  rows: SupplierActivityRow[];
+}
+
+/* =====================================================================
+   Onglet "Bonus trimestriel" (01/10/2026) -- miroir de
+   QuarterlyBonusResponse (backend services/ticket/quarterly-bonus.ts).
+   ===================================================================== */
+export type QuarterlyBonusParams = {
+  mode?: "trimestre" | "periode";
+  annee?: number;
+  trimestre?: number;
+  dateDebut?: string;
+  dateFin?: string;
+  seuilMin?: number;
+  tauxBonus?: number;
+  search?: string;
+  codePlanteur?: string;
+  codeCl?: string;
+  cl?: string;
+  typeProduit?: string;
+  codeArticle?: string;
+  origine?: string;
+  typeOperation?: string;
+  codeTransporteur?: string;
+};
+
+export interface QuarterlyBonusMonth {
+  key: string;
+  label: string;
+  shortLabel: string;
+}
+
+export interface QuarterlyBonusRow {
+  rang: number;
+  codePlanteur: string;
+  nomPlanteur: string | null;
+  /** Pas de source ERP pour l'instant -> toujours null (à renseigner dans l'Excel). */
+  filiation: string | null;
+  mois: number[];
+  nbLivraisons: number;
+  cumul: number;
+  montantBonus: number | null;
+}
+
+export interface QuarterlyBonusResponse {
+  titre: string;
+  dateDebut: string;
+  dateFin: string;
+  months: QuarterlyBonusMonth[];
+  seuilMin: number;
+  tauxBonus: number | null;
+  rows: QuarterlyBonusRow[];
+  totals: { mois: number[]; nbLivraisons: number; cumul: number; montantBonus: number | null; planteurs: number };
+}

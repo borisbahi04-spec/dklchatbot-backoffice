@@ -17,7 +17,11 @@ import type {
   Paginated,
   PiPvPivotResponse,
   Role,
+  QuarterlyBonusParams,
+  QuarterlyBonusResponse,
   Setting,
+  SupplierActivityParams,
+  SupplierActivityResponse,
   Ticket,
   TicketDirectAndCashPurchaseFilters,
   TicketListResponse,
@@ -298,6 +302,52 @@ export const ticketsApi = {
     filename = "flash-pivot.pdf",
   ) => {
     const blob = await apiClient.getBlob("/ticket/pivot-flash/export/pdf", { params });
+    downloadBlob(blob, filename);
+  },
+
+  /**
+   * Onglet "Analyse d'activité des planteurs / fournisseurs" (01/10/2026) --
+   * `GET /ticket/supplier-activity` (+ exports Excel / PDF), voir
+   * TicketService.getSupplierActivity côté backend.
+   */
+  supplierActivity: (params: SupplierActivityParams) =>
+    apiClient.get<SupplierActivityResponse>("/ticket/supplier-activity", { params }),
+
+  supplierActivityExportExcel: async (params: SupplierActivityParams, filename = "activite-planteurs.xlsx") => {
+    const blob = await apiClient.getBlob("/ticket/supplier-activity/export/excel", { params });
+    downloadBlob(blob, filename);
+  },
+
+  supplierActivityExportPdf: async (params: SupplierActivityParams, filename = "activite-planteurs.pdf") => {
+    const blob = await apiClient.getBlob("/ticket/supplier-activity/export/pdf", { params });
+    downloadBlob(blob, filename);
+  },
+
+  /** Onglet "Analyse d'activité des transporteurs" (01/10/2026) -- même contrat, dimension transporteur. */
+  transporterActivity: (params: SupplierActivityParams) =>
+    apiClient.get<SupplierActivityResponse>("/ticket/transporter-activity", { params }),
+
+  transporterActivityExportExcel: async (params: SupplierActivityParams, filename = "activite-transporteurs.xlsx") => {
+    const blob = await apiClient.getBlob("/ticket/transporter-activity/export/excel", { params });
+    downloadBlob(blob, filename);
+  },
+
+  transporterActivityExportPdf: async (params: SupplierActivityParams, filename = "activite-transporteurs.pdf") => {
+    const blob = await apiClient.getBlob("/ticket/transporter-activity/export/pdf", { params });
+    downloadBlob(blob, filename);
+  },
+
+  /** Onglet "Bonus trimestriel" (01/10/2026) -- GET /ticket/quarterly-bonus (+ exports). */
+  quarterlyBonus: (params: QuarterlyBonusParams) =>
+    apiClient.get<QuarterlyBonusResponse>("/ticket/quarterly-bonus", { params }),
+
+  quarterlyBonusExportExcel: async (params: QuarterlyBonusParams, filename = "bonus-planteurs.xlsx") => {
+    const blob = await apiClient.getBlob("/ticket/quarterly-bonus/export/excel", { params });
+    downloadBlob(blob, filename);
+  },
+
+  quarterlyBonusExportPdf: async (params: QuarterlyBonusParams, filename = "bonus-planteurs.pdf") => {
+    const blob = await apiClient.getBlob("/ticket/quarterly-bonus/export/pdf", { params });
     downloadBlob(blob, filename);
   },
 
