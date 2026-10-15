@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import {
   Bot,
+  BookOpenCheck,
   Building2,
   KeyRound,
   LayoutDashboard,
@@ -61,6 +62,12 @@ const navItems: {
     href: "/tickets",
     label: "Tickets",
     icon: Ticket,
+    permission: { action: UserAction.Read, subject: EntityAbility.TICKET },
+  },
+  {
+    href: "/grand-livre",
+    label: "Grand livre fournisseur",
+    icon: BookOpenCheck,
     permission: { action: UserAction.Read, subject: EntityAbility.TICKET },
   },
   {

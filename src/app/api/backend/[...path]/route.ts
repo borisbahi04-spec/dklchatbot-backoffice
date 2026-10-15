@@ -74,7 +74,17 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   }
 
   const hasBody = req.method !== "GET" && req.method !== "HEAD";
-  let body = hasBody ? await req.text() : undefined;
+  // AJOUTÉ 15/10/2026 (menu "Grand livre fournisseur") : un upload
+  // multipart contient du binaire -- `.text()` le décoderait en UTF-8 et
+  // corromprait le fichier (même bug de principe que pour les réponses
+  // binaires plus bas). On relaie alors les octets bruts ; le Content-Type
+  // (avec sa `boundary`) est déjà recopié tel quel ci-dessus.
+  const isMultipart = (contentType ?? "").toLowerCase().startsWith("multipart/form-data");
+  let body: string | ArrayBuffer | undefined = hasBody
+    ? isMultipart
+      ? await req.arrayBuffer()
+      : await req.text()
+    : undefined;
 
   // AJOUTÉ 27/09/2026 (Boris : identifiants lisibles dans DevTools >
   // Payload) : le navigateur n'envoie plus que `{kid, payload}` chiffré
@@ -83,7 +93,7 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   // Un login non chiffré est refusé.
   if (isLogin) {
     try {
-      const credentials = decryptLoginPayload(body ? safeJsonParse(body) : undefined);
+      const credentials = decryptLoginPayload(typeof body === "string" && body ? safeJsonParse(body) : undefined);
       body = JSON.stringify(credentials);
       headers["Content-Type"] = "application/json";
     } catch (err) {
@@ -143,6 +153,10 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
     const passthroughHeaders: Record<string, string> = { "Content-Type": responseContentType || "application/octet-stream" };
     const disposition = backendResponse.headers.get("content-disposition");
     if (disposition) passthroughHeaders["Content-Disposition"] = disposition;
+    // Synthèse d'un traitement renvoyée en en-têtes (ex. grand livre fournisseur).
+    backendResponse.headers.forEach((value, key) => {
+      if (key.toLowerCase().startsWith("x-result-")) passthroughHeaders[key] = value;
+    });
     return new NextResponse(arrayBuffer, { status: backendResponse.status, headers: passthroughHeaders });
   }
 

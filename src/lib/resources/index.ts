@@ -1,4 +1,4 @@
-import { apiClient, downloadBlob } from "../api-client";
+import { apiClient, downloadBlob, filenameFromDisposition } from "../api-client";
 import { createCrudResource } from "./crud-factory";
 import { TicketTypeOperationEnum } from "../types";
 import type {
@@ -35,6 +35,39 @@ import type {
 } from "../types";
 
 export { authApi } from "./auth";
+
+/** Synthèse du traitement "Grand livre fournisseur" (en-têtes `X-Result-*`). */
+export interface SupplierLedgerResult {
+  filename: string;
+  lignesNonRapprochees: number;
+  tickets: number;
+  totalDebit: number;
+  lignesAnalysees: number;
+}
+
+/**
+ * Menu "Grand livre fournisseur" (15/10/2026) --
+ * `POST /ledger/supplier/missing-tickets` (multipart, champ `file`) : le
+ * backend repère les n° de ticket du "Libellé Bordereau" absents de la
+ * "Désignation" et renvoie le résultat en .xlsx, téléchargé directement.
+ */
+export const ledgerApi = {
+  missingTickets: async (file: File): Promise<SupplierLedgerResult> => {
+    const form = new FormData();
+    form.append("file", file);
+    const { blob, headers } = await apiClient.postFormBlob("/ledger/supplier/missing-tickets", form);
+    const filename = filenameFromDisposition(headers["content-disposition"], "tickets-non-rapproches.xlsx");
+    downloadBlob(blob, filename);
+    const num = (k: string) => Number(headers[k] ?? 0) || 0;
+    return {
+      filename,
+      lignesNonRapprochees: num("x-result-count"),
+      tickets: num("x-result-tickets"),
+      totalDebit: num("x-result-total"),
+      lignesAnalysees: num("x-result-lines"),
+    };
+  },
+};
 export { chatApi } from "./chat";
 
 export const usersApi = {

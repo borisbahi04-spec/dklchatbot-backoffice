@@ -185,6 +185,71 @@ async function requestBlob(path: string, options: RequestOptions = {}): Promise<
   return response.data;
 }
 
+/**
+ * Envoi d'un fichier (multipart/form-data) avec réponse BINAIRE -- menu
+ * "Grand livre fournisseur" (15/10/2026) : on importe le .xlsx, le backend
+ * renvoie le .xlsx résultat. Pas de `Content-Type` posé à la main : le
+ * navigateur le génère avec la `boundary` du FormData. Renvoie aussi les
+ * en-têtes (nom de fichier, synthèse `X-Result-*`).
+ */
+async function requestFormBlob(
+  path: string,
+  formData: FormData,
+  options: RequestOptions = {}
+): Promise<{ blob: Blob; headers: Record<string, string> }> {
+  const url = `${path}${buildQueryString(options.params)}`;
+  const headers: Record<string, string> = { ...options.headers };
+  if (APPLICATION_ID) headers["x-application-id"] = APPLICATION_ID;
+
+  let response: AxiosResponse<Blob>;
+  try {
+    response = await http.request<Blob>({
+      url,
+      method: "POST",
+      headers,
+      data: formData,
+      responseType: "blob",
+      signal: options.signal,
+    });
+  } catch (err) {
+    const message = err instanceof AxiosError ? err.message : "Impossible de contacter le serveur.";
+    throw new ApiError(0, {
+      code: 0,
+      message,
+      description: message,
+      timestamp: new Date().toISOString(),
+      infoURL: "",
+    });
+  }
+
+  if (response.status === 401) redirectToLoginOnExpiredSession(path);
+
+  if (response.status >= 400) {
+    let errorBody: HttpResponseError | undefined;
+    try {
+      errorBody = JSON.parse(await response.data.text()) as HttpResponseError;
+    } catch {
+      // Corps d'erreur non-JSON : message générique.
+    }
+    throw new ApiError(response.status, errorBody);
+  }
+
+  const outHeaders: Record<string, string> = {};
+  for (const [key, value] of Object.entries(response.headers ?? {})) {
+    if (typeof value === "string") outHeaders[key.toLowerCase()] = value;
+  }
+  return { blob: response.data, headers: outHeaders };
+}
+
+/** Nom de fichier lu dans un en-tête `Content-Disposition` (sinon `fallback`). */
+export function filenameFromDisposition(disposition: string | undefined, fallback: string): string {
+  if (!disposition) return fallback;
+  const star = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+  if (star) return decodeURIComponent(star[1]);
+  const plain = /filename="?([^";]+)"?/i.exec(disposition);
+  return plain ? plain[1] : fallback;
+}
+
 /** Déclenche le téléchargement d'un Blob dans le navigateur sous le nom donné. */
 export function downloadBlob(blob: Blob, filename: string) {
   const url = window.URL.createObjectURL(blob);
@@ -211,6 +276,9 @@ export const apiClient = {
     request<T>("GET", path, undefined, options),
   /** Téléchargement binaire (export Excel, impressions PDF) -- voir `requestBlob`. */
   getBlob: (path: string, options?: RequestOptions) => requestBlob(path, options),
+  /** Upload multipart + réponse binaire (voir `requestFormBlob`). */
+  postFormBlob: (path: string, formData: FormData, options?: RequestOptions) =>
+    requestFormBlob(path, formData, options),
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>("POST", path, body, options),
   patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
