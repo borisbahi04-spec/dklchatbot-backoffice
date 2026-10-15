@@ -1,4 +1,4 @@
-import { apiClient, downloadBlob, filenameFromDisposition } from "../api-client";
+import { apiClient, downloadBlob } from "../api-client";
 import { createCrudResource } from "./crud-factory";
 import { TicketTypeOperationEnum } from "../types";
 import type {
@@ -36,38 +36,47 @@ import type {
 
 export { authApi } from "./auth";
 
-/** Synthèse du traitement "Grand livre fournisseur" (en-têtes `X-Result-*`). */
-export interface SupplierLedgerResult {
-  filename: string;
-  lignesNonRapprochees: number;
-  tickets: number;
-  totalDebit: number;
-  lignesAnalysees: number;
+/** Tâche de traitement "Grand livre fournisseur" (voir backend SupplierLedgerService). */
+export interface SupplierLedgerJob {
+  id: string;
+  status: "queued" | "processing" | "done" | "error";
+  fileName: string;
+  fileSize: number;
+  rowsRead: number;
+  createdAt: string;
+  finishedAt: string | null;
+  error: string | null;
+  resultFileName: string | null;
+  summary: {
+    lignesAnalysees: number;
+    ticketsLibelle: number;
+    lignesNonRapprochees: number;
+    tickets: number;
+    totalDebit: number;
+  } | null;
 }
 
 /**
- * Menu "Grand livre fournisseur" (15/10/2026) --
- * `POST /ledger/supplier/missing-tickets` (multipart, champ `file`) : le
- * backend repère les n° de ticket du "Libellé Bordereau" absents de la
- * "Désignation" et renvoie le résultat en .xlsx, téléchargé directement.
+ * Menu "Grand livre fournisseur" (15/10/2026). Traitement ASYNCHRONE
+ * (correctif de l'erreur 504 sur gros fichiers) : on crée une tâche, on
+ * interroge son état, puis on télécharge le résultat -- aucune requête ne
+ * dure le temps du traitement.
  */
+const LEDGER_JOBS = "/ledger/supplier/missing-tickets/jobs";
 export const ledgerApi = {
-  missingTickets: async (file: File): Promise<SupplierLedgerResult> => {
+  createJob: (file: File, onUploadProgress?: (percent: number) => void) => {
     const form = new FormData();
     form.append("file", file);
-    const { blob, headers } = await apiClient.postFormBlob("/ledger/supplier/missing-tickets", form);
-    const filename = filenameFromDisposition(headers["content-disposition"], "tickets-non-rapproches.xlsx");
-    downloadBlob(blob, filename);
-    const num = (k: string) => Number(headers[k] ?? 0) || 0;
-    return {
-      filename,
-      lignesNonRapprochees: num("x-result-count"),
-      tickets: num("x-result-tickets"),
-      totalDebit: num("x-result-total"),
-      lignesAnalysees: num("x-result-lines"),
-    };
+    return apiClient.postForm<SupplierLedgerJob>(LEDGER_JOBS, form, { onUploadProgress });
+  },
+  getJob: (id: string, signal?: AbortSignal) =>
+    apiClient.get<SupplierLedgerJob>(`${LEDGER_JOBS}/${id}`, { signal }),
+  downloadResult: async (job: SupplierLedgerJob) => {
+    const blob = await apiClient.getBlob(`${LEDGER_JOBS}/${job.id}/download`);
+    downloadBlob(blob, job.resultFileName ?? "tickets-non-rapproches.xlsx");
   },
 };
+
 export { chatApi } from "./chat";
 
 export const usersApi = {

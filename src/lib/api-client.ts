@@ -241,6 +241,52 @@ async function requestFormBlob(
   return { blob: response.data, headers: outHeaders };
 }
 
+/**
+ * Envoi d'un fichier (multipart/form-data) avec réponse JSON -- menu
+ * "Grand livre fournisseur", création d'une tâche de traitement
+ * (15/10/2026, correctif 504). `onUploadProgress` reçoit un pourcentage.
+ */
+async function requestForm<T>(
+  path: string,
+  formData: FormData,
+  options: RequestOptions & { onUploadProgress?: (percent: number) => void } = {}
+): Promise<T> {
+  const url = `${path}${buildQueryString(options.params)}`;
+  const headers: Record<string, string> = { Accept: "application/json", ...options.headers };
+  if (APPLICATION_ID) headers["x-application-id"] = APPLICATION_ID;
+
+  let response: AxiosResponse;
+  try {
+    response = await http.request({
+      url,
+      method: "POST",
+      headers,
+      data: formData,
+      signal: options.signal,
+      onUploadProgress: (e) => {
+        if (options.onUploadProgress && e.total) {
+          options.onUploadProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      },
+    });
+  } catch (err) {
+    const message = err instanceof AxiosError ? err.message : "Impossible de contacter le serveur.";
+    throw new ApiError(0, {
+      code: 0,
+      message,
+      description: message,
+      timestamp: new Date().toISOString(),
+      infoURL: "",
+    });
+  }
+
+  if (response.status === 401) redirectToLoginOnExpiredSession(path);
+  if (response.status >= 400) {
+    throw new ApiError(response.status, response.data as HttpResponseError | undefined);
+  }
+  return response.data as T;
+}
+
 /** Nom de fichier lu dans un en-tête `Content-Disposition` (sinon `fallback`). */
 export function filenameFromDisposition(disposition: string | undefined, fallback: string): string {
   if (!disposition) return fallback;
@@ -276,6 +322,12 @@ export const apiClient = {
     request<T>("GET", path, undefined, options),
   /** Téléchargement binaire (export Excel, impressions PDF) -- voir `requestBlob`. */
   getBlob: (path: string, options?: RequestOptions) => requestBlob(path, options),
+  /** Upload multipart + réponse JSON (voir `requestForm`). */
+  postForm: <T>(
+    path: string,
+    formData: FormData,
+    options?: RequestOptions & { onUploadProgress?: (percent: number) => void }
+  ) => requestForm<T>(path, formData, options),
   /** Upload multipart + réponse binaire (voir `requestFormBlob`). */
   postFormBlob: (path: string, formData: FormData, options?: RequestOptions) =>
     requestFormBlob(path, formData, options),
