@@ -8,6 +8,8 @@ import { ChatScopePicker } from "./ChatScopePicker";
 import { useChatConversations } from "@/lib/hooks/useChatConversations";
 import { CHAT_SCOPES, GENERAL_SCOPE, getAvailableChatScopes, type ChatScope } from "@/lib/chat-scopes";
 import { useAbility } from "@/lib/permissions/AbilityContext";
+import { EntityAbility, UserAction } from "@/lib/permissions/ability";
+import { NotAuthorized } from "@/components/layout/NotAuthorized";
 
 const PLACEHOLDER_BY_STATE: Record<string, (label: string) => string> = {
   connected: (label) => `Posez une question sur ${label.toLowerCase()}…`,
@@ -102,6 +104,11 @@ export default function ChatPage() {
       e.preventDefault();
       handleSend(input);
     }
+  }
+
+  // Accès à l'assistant IA : permission « Lire » sur Assistant (16/10/2026).
+  if (!ability.can(UserAction.Read, EntityAbility.ASSISTANT)) {
+    return <NotAuthorized />;
   }
 
   return (

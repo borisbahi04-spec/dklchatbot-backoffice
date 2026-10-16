@@ -3,6 +3,8 @@ import { Building2, MessageSquare, Shield, Ticket, Users } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardBody } from "@/components/ui/Card";
 import { fetchServer } from "@/lib/server/backend-client";
+import { Can } from "@/lib/permissions/AbilityContext";
+import { EntityAbility, UserAction } from "@/lib/permissions/ability";
 import type { AuthUserSessionData, Paginated } from "@/lib/types";
 
 /**
@@ -81,6 +83,8 @@ export default async function DashboardHomePage() {
         })}
       </div>
 
+      {/* Raccourci visible seulement avec l'accès à l'assistant IA */}
+      <Can action={UserAction.Read} subject={EntityAbility.ASSISTANT}>
       <div className="mt-6">
         <Link href="/chat">
           <Card className="transition hover:border-slate-300 dark:hover:border-slate-600">
@@ -100,6 +104,7 @@ export default async function DashboardHomePage() {
           </Card>
         </Link>
       </div>
+      </Can>
     </div>
   );
 }

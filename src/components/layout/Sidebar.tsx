@@ -37,7 +37,12 @@ const navItems: {
   anyPermission?: { action: (typeof UserAction)[keyof typeof UserAction]; subject: string }[];
 }[] = [
   { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/chat", label: "Assistant IA", icon: MessageSquare },
+  {
+    href: "/chat",
+    label: "Assistant IA",
+    icon: MessageSquare,
+    permission: { action: UserAction.Read, subject: EntityAbility.ASSISTANT },
+  },
   {
     href: "/users",
     label: "Utilisateurs",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Eye, Printer } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -55,11 +55,11 @@ type TabKey =
   | "transporter-activity"
   | "quarterly-bonus";
 
-const tabs: { key: TabKey; label: string }[] = [
-  { key: "all", label: "Tous les tickets" },
-  { key: "duration-over-one-day", label: "Durée > 1 jour" },
-  { key: "direct-purchase", label: "Achat direct" },
-  { key: "direct-and-cash", label: "Achat direct & comptant" },
+const tabs: { key: TabKey; label: string; subject: EntityAbility }[] = [
+  { key: "all", label: "Tous les tickets", subject: EntityAbility.TICKET_TAB_ALL },
+  { key: "duration-over-one-day", label: "Durée > 1 jour", subject: EntityAbility.TICKET_TAB_DURATION_OVER_ONE_DAY },
+  { key: "direct-purchase", label: "Achat direct", subject: EntityAbility.TICKET_TAB_DIRECT_PURCHASE },
+  { key: "direct-and-cash", label: "Achat direct & comptant", subject: EntityAbility.TICKET_TAB_DIRECT_AND_CASH },
   // MODIFIÉ (demande Boris, 20/09/2026) : cet onglet montrait une ligne par
   // mois (pivot agrégé) -- il affiche désormais une liste de tickets, EXACTEMENT
   // comme "Achat direct". L'ancienne présentation agrégée par mois vit
@@ -70,18 +70,18 @@ const tabs: { key: TabKey; label: string }[] = [
   // (`ticketsApi.monthlyPurchase`, voir `load()` ci-dessous), filtré côté
   // backend sur `prixRegimeTypeOption` = 'ACHAT MENSUEL' -- au lieu de
   // `ticketsApi.list` (liste non filtrée) utilisé jusqu'ici.
-  { key: "monthly", label: "Achat mensuel" },
+  { key: "monthly", label: "Achat mensuel", subject: EntityAbility.TICKET_TAB_MONTHLY },
   // AJOUTÉ (demande Boris, 20/09/2026) : tableau croisé Date sortie x Centre
   // Logistique x typeProduit (PI/PV) -- voir PiPvPivotTable.tsx.
-  { key: "pi-pv", label: "PI & PV" },
+  { key: "pi-pv", label: "PI & PV", subject: EntityAbility.TICKET_TAB_PI_PV },
   // AJOUTÉ (demande Boris, 20/09/2026, précisé le même jour) : MÊME tableau
   // croisé que "PI & PV" mais SANS filtrer sur typeProduit IN ('PI','PV') --
   // tous les tickets, sous-colonnes dynamiques (toutes les valeurs de
   // typeProduit présentes) -- voir FlashPivotTable.tsx.
-  { key: "flash", label: "Flash" },
+  { key: "flash", label: "Flash", subject: EntityAbility.TICKET_TAB_FLASH },
   // AJOUTÉ (demande Boris, 20/09/2026) : tickets tricycle en surcharge (poids
   // net >= seuil configurable, voir Réglages / poidsNetSeuilTricycle).
-  { key: "tricycle", label: "Tickets tricycle" },
+  { key: "tricycle", label: "Tickets tricycle", subject: EntityAbility.TICKET_TAB_TRICYCLE },
   // AJOUTÉ (demande Boris, 20/09/2026) : reprend la présentation "une ligne
   // par mois" de l'ancien onglet "Achat mensuel", mais pour achat direct /
   // achat comptant / achat direct ET comptant (sélecteur de type -- un seul
@@ -90,7 +90,7 @@ const tabs: { key: TabKey; label: string }[] = [
   // dateRegime et/ou dateTransport (choix explicite de Boris : "Deux plages
   // indépendantes, combinables"). Voir MonthlyPurchaseTable.tsx (réutilisé
   // tel quel, même forme de réponse `MonthlyPurchaseResponse`).
-  { key: "purchase-summary", label: "Resumé Paimements" },
+  { key: "purchase-summary", label: "Resumé Paimements", subject: EntityAbility.TICKET_TAB_PURCHASE_SUMMARY },
   // AJOUTÉ (demande Boris, 21/09/2026 : "ajoute un onglet qui affiche les
   // tickets payés. qui filtre sur la date regime et date transport suivant
   // le modele ci-joint [PurchaseSummary], ajoute au filtre la possibilite
@@ -101,18 +101,18 @@ const tabs: { key: TabKey; label: string }[] = [
   // (même modèle que "PurchaseSummary"). Caissier/code+nom planteur ne
   // nécessitaient aucun nouveau champ : déjà dans le FilterBar générique
   // standard (`TEXT_FIELDS`), qui s'affiche normalement pour cet onglet.
-  { key: "paid", label: "Tickets payés" },
+  { key: "paid", label: "Tickets payés", subject: EntityAbility.TICKET_TAB_PAID },
   // AJOUTÉ (demande Boris, 01/10/2026) : période de référence vs période de
   // comparaison, détection des planteurs/fournisseurs devenus inactifs --
   // composant autonome, voir SupplierActivityPanel.tsx.
-  { key: "supplier-activity", label: "Analyse d'activité planteurs" },
+  { key: "supplier-activity", label: "Analyse d'activité planteurs", subject: EntityAbility.TICKET_TAB_SUPPLIER_ACTIVITY },
   // AJOUTÉ (Boris, 01/10/2026 : "fait de même pour les transporteurs") :
   // même composant, dimension transporteur (GET /ticket/transporter-activity).
-  { key: "transporter-activity", label: "Analyse d'activité transporteurs" },
+  { key: "transporter-activity", label: "Analyse d'activité transporteurs", subject: EntityAbility.TICKET_TAB_TRANSPORTER_ACTIVITY },
   // AJOUTÉ (Boris, 01/10/2026, modèle "BONUS PREMIER TRIMESTRE 2026") :
   // quantité par planteur et par mois sur un trimestre ou une période libre
   // -- voir QuarterlyBonusPanel.tsx.
-  { key: "quarterly-bonus", label: "Bonus trimestriel" },
+  { key: "quarterly-bonus", label: "Bonus trimestriel", subject: EntityAbility.TICKET_TAB_QUARTERLY_BONUS },
 ];
 
 /**
@@ -324,6 +324,10 @@ function GlobalStatsBar({ stats, total }: { stats?: TicketStats; total: number }
 export function TicketsPageClient({ initialData }: { initialData?: TicketListResponse<Ticket> }) {
   const ability = useAbility();
   const [tab, setTab] = useState<TabKey>("all");
+  // Onglets autorisés (16/10/2026) : « Lire » sur l'onglet (TicketTab*) en
+  // plus de « Lire » sur Tickets. Le backend applique la même règle.
+  const allowedTabs = useMemo(() => tabs.filter((t) => ability.can(UserAction.Read, t.subject)), [ability]);
+  const isTabAllowed = allowedTabs.some((t) => t.key === tab);
   const [rows, setRows] = useState<(Ticket & { id: string })[]>(seedRows(initialData));
   const [pagination, setPagination] = useState<TicketPagination>(initialData?.pagination ?? EMPTY_PAGINATION);
   const [globalStats, setGlobalStats] = useState<TicketStats | undefined>(initialData?.globalStats);
@@ -418,6 +422,9 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
       skipNextLoad.current = false;
       return;
     }
+
+    // Onglet non autorisé : rien à charger (le backend refuserait, 403).
+    if (!isTabAllowed) return;
 
     let cancelled = false;
     async function load() {
@@ -531,6 +538,7 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     tab,
+    isTabAllowed,
     page,
     sortBy,
     sortDirection,
@@ -729,6 +737,12 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
     setPage(1);
   }
 
+  // Onglet courant non autorisé (ex. « Tous les tickets » par défaut) :
+  // bascule sur le premier onglet autorisé.
+  useEffect(() => {
+    if (!isTabAllowed && allowedTabs.length > 0) handleTabChange(allowedTabs[0].key);
+  }, [isTabAllowed, allowedTabs]);
+
   function handleViewDetail(row: Ticket & { id: string }) {
     setDetailInitial(row);
     setDetailTicketId(row.id);
@@ -850,7 +864,7 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
       />
 
       <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800">
-        {tabs.map((t) => (
+        {allowedTabs.map((t) => (
           <button
             key={t.key}
             onClick={() => handleTabChange(t.key)}
@@ -865,7 +879,13 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
         ))}
       </div>
 
-      {tab === "quarterly-bonus" ? (
+      {!isTabAllowed ? (
+        <p className="py-10 text-center text-sm text-slate-500">
+          {allowedTabs.length === 0
+            ? "Aucun onglet Tickets ne vous est autorisé. Demandez à un administrateur de cocher les onglets dans votre rôle."
+            : "Chargement de l'onglet…"}
+        </p>
+      ) : tab === "quarterly-bonus" ? (
         <QuarterlyBonusPanel />
       ) : tab === "supplier-activity" || tab === "transporter-activity" ? (
         <SupplierActivityPanel

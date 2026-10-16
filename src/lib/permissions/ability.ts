@@ -52,6 +52,23 @@ export enum EntityAbility {
    * importer, traiter et télécharger les résultats.
    */
   SUPPLIER_LEDGER = "SupplierLedger",
+  /** Assistant IA (16/10/2026) : Lire = accéder à l'assistant. Même valeur que `AbilitySubjectEnum.Assistant`. */
+  ASSISTANT = "Assistant",
+  // Onglets de la page Tickets (16/10/2026) : Lire = voir l'onglet. Mêmes
+  // valeurs que `AbilitySubjectEnum.TicketTab*` côté backend.
+  TICKET_TAB_ALL = "TicketTabAll",
+  TICKET_TAB_DURATION_OVER_ONE_DAY = "TicketTabDurationOverOneDay",
+  TICKET_TAB_DIRECT_PURCHASE = "TicketTabDirectPurchase",
+  TICKET_TAB_DIRECT_AND_CASH = "TicketTabDirectAndCash",
+  TICKET_TAB_MONTHLY = "TicketTabMonthly",
+  TICKET_TAB_PI_PV = "TicketTabPiPv",
+  TICKET_TAB_FLASH = "TicketTabFlash",
+  TICKET_TAB_TRICYCLE = "TicketTabTricycle",
+  TICKET_TAB_PURCHASE_SUMMARY = "TicketTabPurchaseSummary",
+  TICKET_TAB_PAID = "TicketTabPaid",
+  TICKET_TAB_SUPPLIER_ACTIVITY = "TicketTabSupplierActivity",
+  TICKET_TAB_TRANSPORTER_ACTIVITY = "TicketTabTransporterActivity",
+  TICKET_TAB_QUARTERLY_BONUS = "TicketTabQuarterlyBonus",
 }
 
 /** Actions CASL, reprises de l'enum `UserAction` de l'ancien projet. */

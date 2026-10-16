@@ -82,7 +82,10 @@ export function UserFormModal({
     const validationErrors = await validateForm(buildUserSchema(!!user), form);
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
-    onSubmit(form);
+    // Mot de passe vraiment optionnel : champ vide = on ne l'envoie pas
+    // (le mot de passe actuel est conservé).
+    const { newPassword, ...rest } = form;
+    onSubmit(newPassword?.trim() ? { ...rest, newPassword } : rest);
   }
 
   return (

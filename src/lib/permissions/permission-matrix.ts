@@ -31,6 +31,25 @@ export const MATRIX_ENTITIES: { value: EntityAbility; label: string }[] = [
     value: EntityAbility.SUPPLIER_LEDGER,
     label: "Grand livre fournisseur — Lire : importer, traiter et télécharger",
   },
+  {
+    value: EntityAbility.ASSISTANT,
+    label: "Assistant IA — Lire : accéder à l'assistant (domaines : « Diffuser » sur chaque entité)",
+  },
+  // Onglets de la page Tickets : « Lire » sur la ligne Tickets donne l'accès
+  // au menu, puis chaque onglet doit être coché ici.
+  { value: EntityAbility.TICKET_TAB_ALL, label: "Tickets › onglet « Tous les tickets »" },
+  { value: EntityAbility.TICKET_TAB_DURATION_OVER_ONE_DAY, label: "Tickets › onglet « Durée > 1 jour »" },
+  { value: EntityAbility.TICKET_TAB_DIRECT_PURCHASE, label: "Tickets › onglet « Achat direct »" },
+  { value: EntityAbility.TICKET_TAB_DIRECT_AND_CASH, label: "Tickets › onglet « Achat direct & comptant »" },
+  { value: EntityAbility.TICKET_TAB_MONTHLY, label: "Tickets › onglet « Achat mensuel »" },
+  { value: EntityAbility.TICKET_TAB_PI_PV, label: "Tickets › onglet « PI & PV »" },
+  { value: EntityAbility.TICKET_TAB_FLASH, label: "Tickets › onglet « Flash »" },
+  { value: EntityAbility.TICKET_TAB_TRICYCLE, label: "Tickets › onglet « Tickets tricycle »" },
+  { value: EntityAbility.TICKET_TAB_PURCHASE_SUMMARY, label: "Tickets › onglet « Résumé paiements »" },
+  { value: EntityAbility.TICKET_TAB_PAID, label: "Tickets › onglet « Tickets payés »" },
+  { value: EntityAbility.TICKET_TAB_SUPPLIER_ACTIVITY, label: "Tickets › onglet « Analyse d'activité planteurs »" },
+  { value: EntityAbility.TICKET_TAB_TRANSPORTER_ACTIVITY, label: "Tickets › onglet « Analyse d'activité transporteurs »" },
+  { value: EntityAbility.TICKET_TAB_QUARTERLY_BONUS, label: "Tickets › onglet « Bonus trimestriel »" },
 ];
 
 /** Colonnes du tableau : une par action CASL (voir `UserAction`). */
