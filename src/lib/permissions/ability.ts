@@ -40,6 +40,18 @@ export enum EntityAbility {
   TICKET = "Ticket",
   ACCESS = "Access",
   ERPCONNECTION = "ErpConnection",
+  // Point de caisse (16/10/2026) -- mêmes valeurs que `AbilitySubjectEnum`
+  // côté backend.
+  LOGISTIC_CENTER = "LogisticCenter",
+  CASH_POINT = "CashPoint",
+  /** Permission spéciale : Lire = voir les points de tous ; Modifier = annuler un point validé. */
+  CASH_POINT_ALL = "CashPointAll",
+  /**
+   * Grand livre fournisseur (16/10/2026) -- même valeur que
+   * `AbilitySubjectEnum.SupplierLedger` côté backend. Lire = accéder au menu,
+   * importer, traiter et télécharger les résultats.
+   */
+  SUPPLIER_LEDGER = "SupplierLedger",
 }
 
 /** Actions CASL, reprises de l'enum `UserAction` de l'ancien projet. */

@@ -10,7 +10,7 @@ import { NotAuthorized } from "@/components/layout/NotAuthorized";
 import { useToast } from "@/context/ToastContext";
 import { useAbility } from "@/lib/permissions/AbilityContext";
 import { EntityAbility, UserAction } from "@/lib/permissions/ability";
-import { ledgerApi, type SupplierLedgerJob } from "@/lib/resources";
+import { ledgerApi, type SupplierLedgerJob, type SupplierLedgerOutputType } from "@/lib/resources";
 
 /** Doit rester aligné sur MAX_FILE_SIZE du backend (SupplierLedgerController). */
 const MAX_SIZE_MB = 100;
@@ -20,6 +20,14 @@ const POLL_INTERVAL_MS = 1500;
 const POLL_TIMEOUT_MS = 30 * 60 * 1000;
 
 const amountFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+const signedFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0, signDisplay: "exceptZero" });
+
+/** Les 3 fichiers produits par un traitement (voir backend SupplierLedgerService). */
+const OUTPUTS: { type: SupplierLedgerOutputType; label: string; hint: string }[] = [
+  { type: "missing", label: "Tickets non rapprochés", hint: "Référence au libellé, absente de la désignation (débit)" },
+  { type: "matched", label: "Tickets rapprochés", hint: "Référence des deux côtés, débit et crédit côte à côte" },
+  { type: "gaps", label: "Écarts débit / crédit", hint: "Référence des deux côtés avec un montant différent" },
+];
 const intFormatter = new Intl.NumberFormat("fr-FR");
 
 type Phase =
@@ -56,8 +64,8 @@ export function SupplierLedgerPageClient() {
   // Arrête l'interrogation si l'utilisateur quitte la page.
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  if (!ability.can(UserAction.Read, EntityAbility.TICKET)) {
-    return <NotAuthorized />;
+  if (!ability.can(UserAction.Read, EntityAbility.SUPPLIER_LEDGER)) {
+    return <NotAuthorized message="Vous n'avez pas la permission « Grand livre fournisseur » (Lire)." />;
   }
 
   const busy = phase.kind === "uploading" || phase.kind === "processing";
@@ -96,9 +104,9 @@ export function SupplierLedgerPageClient() {
     setError(null);
   };
 
-  const download = async (job: SupplierLedgerJob) => {
+  const download = async (job: SupplierLedgerJob, type: SupplierLedgerOutputType) => {
     try {
-      await ledgerApi.downloadResult(job);
+      await ledgerApi.downloadResult(job, type);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Téléchargement impossible.";
       setError(message);
@@ -136,10 +144,15 @@ export function SupplierLedgerPageClient() {
         throw new Error(job.error ?? "Le traitement a échoué.");
       }
 
-      // 3. Téléchargement du résultat.
+      // 3. Téléchargement des 3 fichiers résultat (le navigateur peut
+      // demander d'autoriser les téléchargements multiples ; les boutons de
+      // la carte "Résultat" permettent de les récupérer un par un).
       setPhase({ kind: "done", job });
-      await download(job);
-      toast.success("Traitement terminé, fichier résultat téléchargé.");
+      for (const [i, o] of OUTPUTS.entries()) {
+        if (i > 0) await sleep(400, controller.signal);
+        await download(job, o.type);
+      }
+      toast.success("Traitement terminé, 3 fichiers résultat téléchargés.");
     } catch (err) {
       if (controller.signal.aborted) return;
       const message = err instanceof Error ? err.message : "Le traitement a échoué.";
@@ -260,44 +273,64 @@ export function SupplierLedgerPageClient() {
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               2. Résultat
             </h2>
-            <Button variant="secondary" size="sm" onClick={() => download(phase.job)}>
-              <Download className="h-4 w-4" />
-              Télécharger à nouveau
-            </Button>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {intFormatter.format(summary.lignesAnalysees)} lignes analysées,{" "}
+              {intFormatter.format(summary.ticketsLibelle)} tickets lus au libellé
+            </span>
           </CardHeader>
-          <CardBody>
-            {summary.lignesNonRapprochees === 0 ? (
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                Aucun ticket du libellé bordereau n&apos;est absent de la désignation (
-                {intFormatter.format(summary.lignesAnalysees)} lignes analysées,{" "}
-                {intFormatter.format(summary.ticketsLibelle)} tickets lus).
+          <CardBody className="space-y-5">
+            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div>
+                <dt className="text-xs text-slate-500 dark:text-slate-400">Non rapprochés</dt>
+                <dd className="text-xl font-semibold text-slate-900 dark:text-white">
+                  {intFormatter.format(summary.tickets)}
+                </dd>
+                <dd className="text-xs text-slate-500 dark:text-slate-400">
+                  {amountFormatter.format(summary.totalDebit)} au débit
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-slate-500 dark:text-slate-400">Rapprochés</dt>
+                <dd className="text-xl font-semibold text-slate-900 dark:text-white">
+                  {intFormatter.format(summary.rapproches)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-slate-500 dark:text-slate-400">Avec écart</dt>
+                <dd className="text-xl font-semibold text-slate-900 dark:text-white">
+                  {intFormatter.format(summary.ecarts)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-slate-500 dark:text-slate-400">Total des écarts</dt>
+                <dd className="text-xl font-semibold text-slate-900 dark:text-white">
+                  {signedFormatter.format(summary.totalEcart)}
+                </dd>
+                <dd className="text-xs text-slate-500 dark:text-slate-400">débit − crédit</dd>
+              </div>
+            </dl>
+
+            {!summary.creditColumnFound && (
+              <p className="rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                Colonne « Crédit » introuvable dans le fichier : les crédits sont à 0 dans les fichiers rapprochés et écarts.
               </p>
-            ) : (
-              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                  <dt className="text-xs text-slate-500 dark:text-slate-400">Tickets non rapprochés</dt>
-                  <dd className="text-xl font-semibold text-slate-900 dark:text-white">
-                    {intFormatter.format(summary.tickets)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-slate-500 dark:text-slate-400">Lignes concernées</dt>
-                  <dd className="text-xl font-semibold text-slate-900 dark:text-white">
-                    {intFormatter.format(summary.lignesNonRapprochees)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-slate-500 dark:text-slate-400">Total débit</dt>
-                  <dd className="text-xl font-semibold text-slate-900 dark:text-white">
-                    {amountFormatter.format(summary.totalDebit)}
-                  </dd>
-                </div>
-              </dl>
             )}
-            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
-              {phase.job.resultFileName} : détail par fournisseur, date, journal, n° document, ticket, libellé et débit.
-              Fichier disponible pendant 1 heure.
-            </p>
+
+            <ul className="divide-y divide-slate-200 rounded-md border border-slate-200 dark:divide-slate-700 dark:border-slate-700">
+              {OUTPUTS.map((o) => (
+                <li key={o.type} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{o.label}</p>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{o.hint}</p>
+                  </div>
+                  <Button variant="secondary" size="sm" onClick={() => download(phase.job, o.type)}>
+                    <Download className="h-4 w-4" />
+                    .xlsx
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Fichiers disponibles pendant 1 heure.</p>
           </CardBody>
         </Card>
       )}

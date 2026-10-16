@@ -909,3 +909,130 @@ export interface QuarterlyBonusResponse {
   rows: QuarterlyBonusRow[];
   totals: { mois: number[]; nbLivraisons: number; cumul: number; montantBonus: number | null; planteurs: number };
 }
+
+/**
+ * Point de caisse (16/10/2026) -------------------------------------------
+ * Voir `src/modules/cash` côté backend.
+ */
+export interface LogisticCenter extends BaseEntity {
+  code: string;
+  displayName: string;
+  isActive?: boolean;
+  description?: string;
+}
+
+export interface CreateLogisticCenterDto {
+  code: string;
+  displayName: string;
+  isActive?: boolean;
+  description?: string;
+}
+
+export type UpdateLogisticCenterDto = Partial<CreateLogisticCenterDto>;
+
+export type CashPointStatus = "draft" | "validated" | "cancelled";
+
+/** Lignes saisies à la main par la caissière (même ordre que la feuille Excel). */
+export interface CashPointAmounts {
+  allocatedAmount: number;
+  regimePaid: number;
+  regimePaidManual: number;
+  transportPaid: number;
+  transportPaidManual: number;
+  loaderPay: number;
+  driverBonus: number;
+  otherBonuses: number;
+  bulletinAllocatedAmount: number;
+  bulletinTransportPaid: number;
+  bulletinRegimePaid: number;
+  otherStatements: number;
+}
+
+/** Totaux calculés par le backend (jamais envoyés par le front). */
+export interface CashPointTotals {
+  totalA: number;
+  totalB: number;
+  totalC: number;
+  total1: number;
+  rest1: number;
+  total2: number;
+  rest2: number;
+  cashReturn: number;
+}
+
+export interface CashPoint extends BaseEntity, CashPointAmounts, CashPointTotals {
+  date: string;
+  logisticCenterId: string;
+  logisticCenter?: LogisticCenter;
+  cashierUserId: string;
+  cashierName: string;
+  status: CashPointStatus;
+  comment?: string | null;
+  validatedAt?: string | null;
+  validatedByName?: string | null;
+  cancelledAt?: string | null;
+  cancelledByName?: string | null;
+  cancelReason?: string | null;
+}
+
+/** La caissière n'est pas saisie : le backend prend l'utilisateur connecté. */
+export interface CreateCashPointDto extends Partial<CashPointAmounts> {
+  date: string;
+  logisticCenterId: string;
+  /** Obligatoire, > 0. */
+  allocatedAmount: number;
+  comment?: string;
+}
+
+export type UpdateCashPointDto = Partial<CreateCashPointDto>;
+
+export interface CashPointListParams {
+  dateFrom?: string;
+  dateTo?: string;
+  logisticCenterId?: string;
+  /** Ignoré par le backend sans la permission spéciale. */
+  cashierUserId?: string;
+  status?: CashPointStatus;
+  page?: number;
+  per_page?: number;
+}
+
+export type CashInventoryRow = CashPointAmounts &
+  CashPointTotals & {
+    logisticCenterId: string;
+    code: string;
+    displayName: string;
+    count: number;
+    /** Présents quand groupBy = "cashier". */
+    cashierUserId?: string;
+    cashierName?: string;
+  };
+
+export interface CashInventoryParams {
+  dateFrom: string;
+  dateTo: string;
+  logisticCenterId?: string;
+  cashierUserId?: string;
+  groupBy?: "center" | "cashier";
+}
+
+export interface CashPointCashier {
+  id: string;
+  name: string;
+}
+
+export interface CashInventoryResponse {
+  dateFrom: string;
+  dateTo: string;
+  /** "mine" : seuls les points de l'utilisateur ; "all" : permission spéciale. */
+  scope: "mine" | "all";
+  groupBy: "center" | "cashier";
+  filters: {
+    cashierUserId: string | null;
+    cashierName: string | null;
+    logisticCenterId: string | null;
+    centerLabel: string | null;
+  };
+  rows: CashInventoryRow[];
+  totals: CashPointAmounts & CashPointTotals & { count: number };
+}

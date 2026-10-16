@@ -21,6 +21,16 @@ export const MATRIX_ENTITIES: { value: EntityAbility; label: string }[] = [
   { value: EntityAbility.ERPCONNECTION, label: "Connexions ERP" },
   { value: EntityAbility.SETTING, label: "Paramètres" },
   { value: EntityAbility.EXPORTER, label: "Exports" },
+  { value: EntityAbility.LOGISTIC_CENTER, label: "Centres logistiques" },
+  { value: EntityAbility.CASH_POINT, label: "Points de caisse (les siens)" },
+  {
+    value: EntityAbility.CASH_POINT_ALL,
+    label: "Points de caisse (tous) — Lire : voir tous · Modifier : annuler un validé",
+  },
+  {
+    value: EntityAbility.SUPPLIER_LEDGER,
+    label: "Grand livre fournisseur — Lire : importer, traiter et télécharger",
+  },
 ];
 
 /** Colonnes du tableau : une par action CASL (voir `UserAction`). */

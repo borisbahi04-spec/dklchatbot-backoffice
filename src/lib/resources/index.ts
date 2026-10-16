@@ -4,7 +4,14 @@ import { TicketTypeOperationEnum } from "../types";
 import type {
   Access,
   Branch,
+  CashInventoryParams,
+  CashInventoryResponse,
+  CashPoint,
+  CashPointCashier,
+  CashPointListParams,
   CreateAccessDto,
+  CreateCashPointDto,
+  CreateLogisticCenterDto,
   CreateBranchDto,
   CreateErpConnectionDto,
   CreateRoleDto,
@@ -13,6 +20,7 @@ import type {
   ErpConnection,
   FlashPivotResponse,
   ListQueryParams,
+  LogisticCenter,
   MonthlyPurchaseResponse,
   Paginated,
   PiPvPivotResponse,
@@ -27,6 +35,8 @@ import type {
   TicketListResponse,
   UpdateAccessDto,
   UpdateBranchDto,
+  UpdateCashPointDto,
+  UpdateLogisticCenterDto,
   UpdateErpConnectionDto,
   UpdateRoleDto,
   UpdateSettingDto,
@@ -47,14 +57,26 @@ export interface SupplierLedgerJob {
   finishedAt: string | null;
   error: string | null;
   resultFileName: string | null;
+  resultFiles: Record<SupplierLedgerOutputType, string> | null;
   summary: {
     lignesAnalysees: number;
     ticketsLibelle: number;
     lignesNonRapprochees: number;
     tickets: number;
     totalDebit: number;
+    rapproches: number;
+    ecarts: number;
+    totalEcart: number;
+    creditColumnFound: boolean;
   } | null;
 }
+
+/**
+ * Fichiers produits par un traitement "Grand livre fournisseur" :
+ * missing = tickets non rapprochés, matched = tickets rapprochés (débit /
+ * crédit), gaps = écarts débit / crédit (16/10/2026).
+ */
+export type SupplierLedgerOutputType = "missing" | "matched" | "gaps";
 
 /**
  * Menu "Grand livre fournisseur" (15/10/2026). Traitement ASYNCHRONE
@@ -71,9 +93,9 @@ export const ledgerApi = {
   },
   getJob: (id: string, signal?: AbortSignal) =>
     apiClient.get<SupplierLedgerJob>(`${LEDGER_JOBS}/${id}`, { signal }),
-  downloadResult: async (job: SupplierLedgerJob) => {
-    const blob = await apiClient.getBlob(`${LEDGER_JOBS}/${job.id}/download`);
-    downloadBlob(blob, job.resultFileName ?? "tickets-non-rapproches.xlsx");
+  downloadResult: async (job: SupplierLedgerJob, type: SupplierLedgerOutputType = "missing") => {
+    const blob = await apiClient.getBlob(`${LEDGER_JOBS}/${job.id}/download?type=${type}`);
+    downloadBlob(blob, job.resultFiles?.[type] ?? `grand-livre-${type}.xlsx`);
   },
 };
 
@@ -413,5 +435,71 @@ export const ticketsApi = {
   printTicketDetail: async (id: string, filename?: string) => {
     const blob = await apiClient.getBlob(`/ticket/${id}/print-detail`);
     downloadBlob(blob, filename ?? `ticket-${id}-detail.pdf`);
+  },
+};
+
+/**
+ * Centres logistiques + points de caisse (16/10/2026).
+ */
+export const logisticCentersApi = {
+  ...createCrudResource<LogisticCenter, CreateLogisticCenterDto, UpdateLogisticCenterDto>(
+    "/logistic-center"
+  ),
+  /** CL actifs, pour les listes déroulantes du point de caisse. */
+  listForSelect: () => apiClient.get<LogisticCenter[]>("/logistic-center/list/select"),
+};
+
+/** Ouvre un PDF dans un nouvel onglet (impression) ou le télécharge ; téléchargement si le popup est bloqué. */
+function openOrDownloadPdf(blob: Blob, filename: string, mode: "open" | "download") {
+  if (mode === "open") {
+    const url = window.URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
+    if (win) {
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+      return;
+    }
+    window.URL.revokeObjectURL(url);
+  }
+  downloadBlob(blob, filename);
+}
+
+export const cashPointsApi = {
+  list: (params?: ListQueryParams) =>
+    apiClient.get<Paginated<CashPoint>>("/cash-point", { params }),
+  get: (id: string) => apiClient.get<CashPoint>(`/cash-point/${id}`),
+  create: (dto: CreateCashPointDto) => apiClient.post<CashPoint>("/cash-point", dto),
+  update: (id: string, dto: UpdateCashPointDto) =>
+    apiClient.patch<CashPoint>(`/cash-point/${id}`, dto),
+  remove: (id: string) => apiClient.delete<void>(`/cash-point/${id}`),
+  validate: (id: string) => apiClient.post<CashPoint>(`/cash-point/${id}/validate`),
+  cancel: (id: string, reason: string) =>
+    apiClient.post<CashPoint>(`/cash-point/${id}/cancel`, { reason }),
+  cashiers: () => apiClient.get<CashPointCashier[]>("/cash-point/cashiers"),
+  inventory: (params: CashInventoryParams) =>
+    apiClient.get<CashInventoryResponse>("/cash-point/inventory", { params: { ...params } }),
+
+  /** Exports de la liste (mêmes filtres que l'écran, sans pagination). */
+  exportExcel: async (params: CashPointListParams) => {
+    const blob = await apiClient.getBlob("/cash-point/export/excel", { params: { ...params } });
+    downloadBlob(blob, `points-de-caisse-${params.dateFrom ?? ""}-${params.dateTo ?? ""}.xlsx`);
+  },
+  exportPdf: async (params: CashPointListParams, mode: "open" | "download" = "download") => {
+    const blob = await apiClient.getBlob("/cash-point/export/pdf", { params: { ...params } });
+    openOrDownloadPdf(blob, `points-de-caisse-${params.dateFrom ?? ""}-${params.dateTo ?? ""}.pdf`, mode);
+  },
+
+  /** Exports / impression de l'inventaire général. */
+  inventoryExcel: async (params: CashInventoryParams) => {
+    const blob = await apiClient.getBlob("/cash-point/inventory/export/excel", { params: { ...params } });
+    downloadBlob(blob, `inventaire-caisse-${params.dateFrom}-${params.dateTo}.xlsx`);
+  },
+  inventoryPdf: async (params: CashInventoryParams, mode: "open" | "download" = "download") => {
+    const blob = await apiClient.getBlob("/cash-point/inventory/export/pdf", { params: { ...params } });
+    openOrDownloadPdf(blob, `inventaire-caisse-${params.dateFrom}-${params.dateTo}.pdf`, mode);
+  },
+  /** Rapport PDF : ouvert dans un nouvel onglet pour impression (téléchargé si le navigateur bloque). */
+  print: async (point: Pick<CashPoint, "id" | "date" | "logisticCenter">) => {
+    const blob = await apiClient.getBlob(`/cash-point/${point.id}/print`);
+    openOrDownloadPdf(blob, `point-caisse-${point.logisticCenter?.code ?? "CL"}-${point.date}.pdf`, "open");
   },
 };

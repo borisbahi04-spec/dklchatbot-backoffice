@@ -15,6 +15,8 @@ import {
   Shield,
   Ticket,
   Users,
+  Wallet,
+  Warehouse,
 } from "lucide-react";
 import { useAbility, type AppAbility } from "@/lib/permissions/AbilityContext";
 import { EntityAbility, UserAction } from "@/lib/permissions/ability";
@@ -31,6 +33,8 @@ const navItems: {
   label: string;
   icon: typeof LayoutDashboard;
   permission?: { action: (typeof UserAction)[keyof typeof UserAction]; subject: string };
+  /** Variante « l'une de ces permissions suffit » (ex. Points de caisse). */
+  anyPermission?: { action: (typeof UserAction)[keyof typeof UserAction]; subject: string }[];
 }[] = [
   { href: "/", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/chat", label: "Assistant IA", icon: MessageSquare },
@@ -68,7 +72,23 @@ const navItems: {
     href: "/grand-livre",
     label: "Grand livre fournisseur",
     icon: BookOpenCheck,
-    permission: { action: UserAction.Read, subject: EntityAbility.TICKET },
+    permission: { action: UserAction.Read, subject: EntityAbility.SUPPLIER_LEDGER },
+  },
+  {
+    href: "/points-caisse",
+    label: "Points de caisse",
+    icon: Wallet,
+    anyPermission: [
+      { action: UserAction.Read, subject: EntityAbility.CASH_POINT },
+      { action: UserAction.Create, subject: EntityAbility.CASH_POINT },
+      { action: UserAction.Read, subject: EntityAbility.CASH_POINT_ALL },
+    ],
+  },
+  {
+    href: "/centres-logistiques",
+    label: "Centres logistiques",
+    icon: Warehouse,
+    permission: { action: UserAction.Read, subject: EntityAbility.LOGISTIC_CENTER },
   },
   {
     href: "/erp-connections",
@@ -85,6 +105,9 @@ const navItems: {
 ];
 
 function isVisible(ability: AppAbility, item: (typeof navItems)[number]): boolean {
+  if (item.anyPermission) {
+    return item.anyPermission.some((p) => ability.can(p.action, p.subject));
+  }
   if (!item.permission) return true;
   return ability.can(item.permission.action, item.permission.subject);
 }
