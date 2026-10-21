@@ -168,7 +168,9 @@ export function CashPointFormModal({
             {date ? `JOURNÉE DU ${longDate(date)}` : "JOURNÉE DU —"} · POINT CAISSI(E)RE{" "}
             {center?.displayName?.toUpperCase() ?? "—"}
           </span>
-          <span className="tabular-nums">{formatMoney(amounts.allocatedAmount)}</span>
+          <span className="tabular-nums">
+            {formatMoney(amounts.allocatedAmount + amounts.bulletinAllocatedAmount)}
+          </span>
         </div>
         <div className="grid grid-cols-[1fr_9rem_9rem] border-t border-slate-300 bg-orange-50 text-center text-xs font-semibold uppercase dark:border-slate-700 dark:bg-slate-800">
           <div className="px-3 py-1.5 text-left">Opérations</div>
