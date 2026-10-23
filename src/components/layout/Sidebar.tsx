@@ -13,6 +13,7 @@ import {
   Plug,
   Settings,
   Shield,
+  Sprout,
   Ticket,
   Users,
   Wallet,
@@ -78,6 +79,13 @@ const navItems: {
     label: "Grand livre fournisseur",
     icon: BookOpenCheck,
     permission: { action: UserAction.Read, subject: EntityAbility.SUPPLIER_LEDGER },
+  },
+  {
+    // ADR-002 (23/10/2026) : traitement séparé ENGRAIS / PLANTS.
+    href: "/engrais-plants",
+    label: "Engrais & plants",
+    icon: Sprout,
+    permission: { action: UserAction.Read, subject: EntityAbility.PLANTER_RECONCILIATION },
   },
   {
     href: "/points-caisse",

@@ -32,6 +32,10 @@ export const MATRIX_ENTITIES: { value: EntityAbility; label: string }[] = [
     label: "Grand livre fournisseur — Lire : importer, traiter et télécharger",
   },
   {
+    value: EntityAbility.PLANTER_RECONCILIATION,
+    label: "Engrais & plants — Lire : importer les listes et factures, analyser et télécharger",
+  },
+  {
     value: EntityAbility.ASSISTANT,
     label: "Assistant IA — Lire : accéder à l'assistant (domaines : « Diffuser » sur chaque entité)",
   },

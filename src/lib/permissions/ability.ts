@@ -52,6 +52,12 @@ export enum EntityAbility {
    * importer, traiter et télécharger les résultats.
    */
   SUPPLIER_LEDGER = "SupplierLedger",
+  /**
+   * Engrais & plants (ADR-002, 23/10/2026) -- même valeur que
+   * `AbilitySubjectEnum.PlanterReconciliation` côté backend. Lire = accéder
+   * au menu, importer les fichiers, analyser et télécharger les résultats.
+   */
+  PLANTER_RECONCILIATION = "PlanterReconciliation",
   /** Assistant IA (16/10/2026) : Lire = accéder à l'assistant. Même valeur que `AbilitySubjectEnum.Assistant`. */
   ASSISTANT = "Assistant",
   // Onglets de la page Tickets (16/10/2026) : Lire = voir l'onglet. Mêmes
