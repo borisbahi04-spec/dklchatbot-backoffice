@@ -633,3 +633,24 @@ Permissions (matrice du rôle) : `DeliveryCustomer`, `DeliveryProduct`, `Deliver
 Fichiers : `app/(dashboard)/livraisons/*`, `components/resources/delivery/*`, `lib/resources/delivery.ts`, `Sidebar.tsx`, `ability.ts`, `permission-matrix.ts`.
 
 Règles métier : ADR-0014 du backend (`chatbot-backend/docs/adr/0014-module-livraisons-clients-cumul-calcule-depuis-les-lignes.md`).
+
+## Module « Pointage des employés » (27/10/2026)
+
+Page `/pointage` (lien « Pointage » dans la Sidebar), onglets affichés selon les permissions :
+
+- **Présence du jour** : sur site, en pause, partis, retards, pas encore arrivés, absents, incomplets (sortie manquante) — actualisée chaque minute, Excel et PDF ;
+- **Pointages** : journal filtré, photo prise au scan, pointage manuel, correction et annulation (motif obligatoire, historique visible) ;
+- **Rapports** : période ≤ 93 jours, synthèse par employé (jours, absences, retards, départs anticipés, dépassement de pause, heures travaillées et sup.) et détail par jour — Excel (avec heures en décimal pour la paie) et PDF ;
+- **Employés et cartes** : inscription (photo webcam ou fichier), impression des cartes QR (sélection, groupe ou tous ; 10 cartes par A4, format carte bancaire), « Nouvelle carte » en cas de perte ;
+- **Groupes et horaires** : mode « entrée / sortie » ou « entrée / pause / retour / sortie », jours, horaires (équipe de nuit possible), pause, tolérances, anti-doublon.
+
+Page `/pointeuse` (lien « Pointeuse ») : écran plein écran du PC de pointage, sans menu. La caméra lit le QR (`BarcodeDetector` ou `jsqr`), le serveur choisit l'action et l'écran affiche photo, nom, action, heure et retard éventuel (bip sonore). Une douchette USB fonctionne aussi. Réglages du poste (nom, caméra, son) gardés dans le navigateur.
+
+- **Caméra = contexte sécurisé** : le navigateur n'ouvre la caméra qu'en **HTTPS** ou sur `localhost`. Sur un PC qui ouvre le front en `http://<ip>:3000`, servir le front en HTTPS (ou, en dépannage, Chrome : `chrome://flags/#unsafely-treat-insecure-origin-as-secure` avec l'adresse du front).
+- Compte kiosque : un rôle avec **uniquement** « Pointage › Pointeuse — Créer ». Lancer Chrome/Edge en mode kiosque sur `/pointeuse` (ex. `chrome --kiosk https://…/pointeuse`). La session expire au bout de 1 jour (réglage backend) : reconnexion quotidienne.
+
+Permissions (matrice du rôle) : `AttendanceGroup`, `AttendanceEmployee` (Lire = liste, photos, cartes · Modifier = fiche, photo, nouvelle carte), `AttendancePunch` (Lire = présence, rapports · Créer = manuel · Modifier = corriger · Supprimer = annuler), `AttendanceKiosk` (Créer = pointeuse).
+
+Fichiers : `app/(dashboard)/pointage/*`, `app/pointeuse/*`, `components/resources/attendance/*`, `lib/resources/attendance.ts`, `Sidebar.tsx`, `ability.ts`, `permission-matrix.ts`. Dépendance ajoutée : `jsqr`.
+
+Règles métier : ADR-0015 du backend (`chatbot-backend/docs/adr/0015-module-pointage-cartes-qr-sequence-automatique.md`).

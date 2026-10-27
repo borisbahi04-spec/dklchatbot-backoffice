@@ -77,6 +77,19 @@ export enum EntityAbility {
   DELIVERY_PRODUCT = "DeliveryProduct",
   DELIVERY_ORDER = "DeliveryOrder",
   DELIVERY_LINE = "DeliveryLine",
+  /**
+   * Pointage des employés (27/10/2026) -- mêmes valeurs que
+   * `AbilitySubjectEnum.Attendance*` côté backend.
+   * ATTENDANCE_EMPLOYEE : Lire = liste, photos, impression des cartes ;
+   * Modifier = fiche, photo, nouvelle carte. ATTENDANCE_PUNCH : Lire =
+   * présence du jour, pointages, rapports ; Créer = pointage manuel ;
+   * Modifier = corriger ; Supprimer = ANNULER. ATTENDANCE_KIOSK : Créer =
+   * utiliser la pointeuse (compte du PC de pointage).
+   */
+  ATTENDANCE_GROUP = "AttendanceGroup",
+  ATTENDANCE_EMPLOYEE = "AttendanceEmployee",
+  ATTENDANCE_PUNCH = "AttendancePunch",
+  ATTENDANCE_KIOSK = "AttendanceKiosk",
   /** Assistant IA (16/10/2026) : Lire = accéder à l'assistant. Même valeur que `AbilitySubjectEnum.Assistant`. */
   ASSISTANT = "Assistant",
   // Onglets de la page Tickets (16/10/2026) : Lire = voir l'onglet. Mêmes

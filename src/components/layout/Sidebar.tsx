@@ -6,12 +6,14 @@ import { clsx } from "clsx";
 import {
   Bot,
   BookOpenCheck,
+  Clock,
   Building2,
   Fuel,
   KeyRound,
   LayoutDashboard,
   MessageSquare,
   Plug,
+  QrCode,
   Settings,
   Shield,
   Sprout,
@@ -125,6 +127,25 @@ const navItems: {
       { action: UserAction.Read, subject: EntityAbility.DELIVERY_CUSTOMER },
       { action: UserAction.Read, subject: EntityAbility.DELIVERY_PRODUCT },
     ],
+  },
+  {
+    // Pointage des employés (27/10/2026).
+    href: "/pointage",
+    label: "Pointage",
+    icon: Clock,
+    anyPermission: [
+      { action: UserAction.Read, subject: EntityAbility.ATTENDANCE_PUNCH },
+      { action: UserAction.Create, subject: EntityAbility.ATTENDANCE_PUNCH },
+      { action: UserAction.Read, subject: EntityAbility.ATTENDANCE_EMPLOYEE },
+      { action: UserAction.Read, subject: EntityAbility.ATTENDANCE_GROUP },
+    ],
+  },
+  {
+    // Écran plein écran du PC de pointage (compte kiosque).
+    href: "/pointeuse",
+    label: "Pointeuse",
+    icon: QrCode,
+    permission: { action: UserAction.Create, subject: EntityAbility.ATTENDANCE_KIOSK },
   },
   {
     href: "/centres-logistiques",

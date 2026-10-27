@@ -52,6 +52,16 @@ export const MATRIX_ENTITIES: { value: EntityAbility; label: string }[] = [
     value: EntityAbility.DELIVERY_LINE,
     label: "Livraisons › Lignes de livraison — Lire : suivi, statistiques · Créer : saisir · Modifier : corriger · Supprimer : annuler",
   },
+  { value: EntityAbility.ATTENDANCE_GROUP, label: "Pointage › Groupes et horaires" },
+  {
+    value: EntityAbility.ATTENDANCE_EMPLOYEE,
+    label: "Pointage › Employés — Lire : liste, photos, impression des cartes · Modifier : fiche, photo, nouvelle carte",
+  },
+  {
+    value: EntityAbility.ATTENDANCE_PUNCH,
+    label: "Pointage › Pointages — Lire : présence, rapports · Créer : pointage manuel · Modifier : corriger · Supprimer : annuler",
+  },
+  { value: EntityAbility.ATTENDANCE_KIOSK, label: "Pointage › Pointeuse — Créer : utiliser la pointeuse (compte du PC de pointage)" },
   {
     value: EntityAbility.ASSISTANT,
     label: "Assistant IA — Lire : accéder à l'assistant (domaines : « Diffuser » sur chaque entité)",
