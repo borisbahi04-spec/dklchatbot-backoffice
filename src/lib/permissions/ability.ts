@@ -58,6 +58,25 @@ export enum EntityAbility {
    * au menu, importer les fichiers, analyser et télécharger les résultats.
    */
   PLANTER_RECONCILIATION = "PlanterReconciliation",
+  /**
+   * Carburant (26/10/2026) -- mêmes valeurs que `AbilitySubjectEnum.Fuel*`
+   * côté backend. FUEL_MOVEMENT : Lire = mouvements, stock, point mensuel,
+   * statistiques ; Créer = saisir ; Supprimer = ANNULER un mouvement.
+   */
+  FUEL_TANK = "FuelTank",
+  FUEL_VEHICLE = "FuelVehicle",
+  FUEL_MOVEMENT = "FuelMovement",
+  FUEL_GAUGING = "FuelGauging",
+  /**
+   * Livraisons clients (27/10/2026) -- mêmes valeurs que
+   * `AbilitySubjectEnum.Delivery*` côté backend. DELIVERY_ORDER : Modifier =
+   * modifier, clôturer, rouvrir. DELIVERY_LINE : Lire = suivi, livraisons,
+   * statistiques ; Créer = saisir ; Modifier = corriger ; Supprimer = ANNULER.
+   */
+  DELIVERY_CUSTOMER = "DeliveryCustomer",
+  DELIVERY_PRODUCT = "DeliveryProduct",
+  DELIVERY_ORDER = "DeliveryOrder",
+  DELIVERY_LINE = "DeliveryLine",
   /** Assistant IA (16/10/2026) : Lire = accéder à l'assistant. Même valeur que `AbilitySubjectEnum.Assistant`. */
   ASSISTANT = "Assistant",
   // Onglets de la page Tickets (16/10/2026) : Lire = voir l'onglet. Mêmes
@@ -75,6 +94,7 @@ export enum EntityAbility {
   TICKET_TAB_SUPPLIER_ACTIVITY = "TicketTabSupplierActivity",
   TICKET_TAB_TRANSPORTER_ACTIVITY = "TicketTabTransporterActivity",
   TICKET_TAB_QUARTERLY_BONUS = "TicketTabQuarterlyBonus",
+  TICKET_TAB_CANCELLED = "TicketTabCancelled", // Tickets annulés (26/10/2026)
 }
 
 /** Actions CASL, reprises de l'enum `UserAction` de l'ancien projet. */

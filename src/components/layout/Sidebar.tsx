@@ -7,6 +7,7 @@ import {
   Bot,
   BookOpenCheck,
   Building2,
+  Fuel,
   KeyRound,
   LayoutDashboard,
   MessageSquare,
@@ -15,6 +16,7 @@ import {
   Shield,
   Sprout,
   Ticket,
+  Truck,
   Users,
   Wallet,
   Warehouse,
@@ -95,6 +97,33 @@ const navItems: {
       { action: UserAction.Read, subject: EntityAbility.CASH_POINT },
       { action: UserAction.Create, subject: EntityAbility.CASH_POINT },
       { action: UserAction.Read, subject: EntityAbility.CASH_POINT_ALL },
+    ],
+  },
+  {
+    // Gestion du stock de carburant (26/10/2026).
+    href: "/carburant",
+    label: "Carburant",
+    icon: Fuel,
+    anyPermission: [
+      { action: UserAction.Read, subject: EntityAbility.FUEL_MOVEMENT },
+      { action: UserAction.Create, subject: EntityAbility.FUEL_MOVEMENT },
+      { action: UserAction.Read, subject: EntityAbility.FUEL_GAUGING },
+      { action: UserAction.Create, subject: EntityAbility.FUEL_GAUGING },
+      { action: UserAction.Read, subject: EntityAbility.FUEL_TANK },
+      { action: UserAction.Read, subject: EntityAbility.FUEL_VEHICLE },
+    ],
+  },
+  {
+    // Livraisons clients : commandes B.A.L et livraisons (27/10/2026).
+    href: "/livraisons",
+    label: "Livraisons clients",
+    icon: Truck,
+    anyPermission: [
+      { action: UserAction.Read, subject: EntityAbility.DELIVERY_LINE },
+      { action: UserAction.Create, subject: EntityAbility.DELIVERY_LINE },
+      { action: UserAction.Read, subject: EntityAbility.DELIVERY_ORDER },
+      { action: UserAction.Read, subject: EntityAbility.DELIVERY_CUSTOMER },
+      { action: UserAction.Read, subject: EntityAbility.DELIVERY_PRODUCT },
     ],
   },
   {

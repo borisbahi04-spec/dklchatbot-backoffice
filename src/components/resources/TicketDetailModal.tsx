@@ -126,6 +126,21 @@ export function TicketDetailModal({
             <Field label="N° régime" value={formatText(ticket.numeroRegime)} />
             <Field label="N° transport" value={formatText(ticket.numeroTransp)} />
             <Field label="Ticket planteur" value={formatText(ticket.ticketPlanteur)} />
+            {/* AJOUTÉ 26/10/2026 : statut ERP du ticket. */}
+            <Field
+              label="Statut ticket"
+              value={
+                ticket.ticketAnnule === true ? (
+                  <Badge tone="danger">Annulé</Badge>
+                ) : ticket.ticketValide === true ? (
+                  <Badge tone="success">Valide</Badge>
+                ) : ticket.ticketValide === false ? (
+                  <Badge tone="warning">Non validé</Badge>
+                ) : (
+                  "—"
+                )
+              }
+            />
             <Field
               label="Statut solde"
               value={
@@ -143,6 +158,10 @@ export function TicketDetailModal({
           <Section title="Acteurs & transport">
             <Field label="Planteur" value={formatText(ticket.nomPlanteur)} />
             <Field label="Code planteur" value={formatText(ticket.codePlanteur)} />
+            <Field label="Village" value={formatText(ticket.village)} />
+            <Field label="Secteur" value={formatText(ticket.secteur)} />
+            <Field label="Coopérative" value={formatText(ticket.cooperative)} />
+            <Field label="Code encadrement" value={formatText(ticket.codeEncadrement)} />
             <Field label="Centre Logistique" value={formatText(ticket.cl)} />
             <Field label="Code CL" value={formatText(ticket.codeCl)} />
             <Field label="Camion" value={formatText(ticket.camion)} />

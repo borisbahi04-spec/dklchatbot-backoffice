@@ -599,3 +599,37 @@ Changer un fichier, une colonne, l'année ou une règle efface le résultat affi
   - `permission-matrix.ts`.
 
 Détail : `docs/engrais-plants-adr-002.md`.
+
+## Module « Carburant » (26/10/2026)
+
+Page `/carburant` (lien « Carburant » dans la Sidebar), onglets affichés selon les permissions :
+
+- **Stock des cuves** : stock théorique à une date, remplissage, dernier jaugeage et écart ;
+- **Mouvements** : saisie (achat, transfert interne, livraison véhicule interne, vente véhicule externe), liste filtrée, totaux, export Excel, annulation avec motif ;
+- **Point mensuel par cuve** : SI, entrée, sortie, vente, SF, jaugeage, écart — Excel et impression PDF ;
+- **Tableau mensuel** : cuves × mois (entrées par défaut) — Excel et PDF ;
+- **Kilométrage / 100 km** : pour une période, km parcourus avec chaque livraison (compteur de la livraison suivante − compteur), L/100 km, km/L, moyenne par véhicule et générale, niveau de consommation — Excel et PDF ;
+- **Statistiques** : achats, consommation interne, ventes, marge indicative, L/100 km par véhicule, clients, fournisseurs — Excel ;
+- **Jaugeages**, **Cuves**, **Véhicules**.
+
+Permissions (matrice du rôle) : `FuelTank`, `FuelVehicle`, `FuelMovement` (Lire / Créer = saisir / Supprimer = annuler), `FuelGauging`.
+
+Fichiers : `app/(dashboard)/carburant/*`, `components/resources/fuel/*`, `lib/resources/fuel.ts`, `Sidebar.tsx`, `ability.ts`, `permission-matrix.ts`.
+
+Règles métier : ADR-0013 du backend (`chatbot-backend/docs/adr/0013-module-carburant-stock-calcule-depuis-les-mouvements.md`).
+
+## Module « Livraisons clients » (27/10/2026)
+
+Page `/livraisons` (lien « Livraisons clients » dans la Sidebar), onglets affichés selon les permissions :
+
+- **Suivi des livraisons** : la feuille « STGO : SUIVI DES LIVRAISONS DE … POUR L'ANNÉE … — CUMUL = … » à l'écran, par client / produit, année ou période (date de commande) : B.A.L et quantité commandée fusionnés, date fusionnée pour les livraisons du même jour, cumul et quantité restante ligne à ligne — Excel et PDF au même format ;
+- **Livraisons** : saisie (le N° B.A.L suffit : client, produit et reste affichés automatiquement ; N° ordre proposé, N° B.L, citerne et chauffeur avec autocomplétion, quantité, aperçu du reste et alerte de dépassement, « Enregistrer et ligne suivante »), correction, annulation avec motif, liste filtrée, totaux, export Excel ;
+- **Commandes (B.A.L)** : création, cumul livré / reste / avancement (non démarrée, en cours, soldée, dépassée), saisie d'une livraison depuis la commande, détail, clôture / réouverture, suppression sans livraison ;
+- **Statistiques** : par mois, client, produit, citerne, chauffeur, et carnet des commandes ouvertes — Excel ;
+- **Clients**, **Produits**.
+
+Permissions (matrice du rôle) : `DeliveryCustomer`, `DeliveryProduct`, `DeliveryOrder` (Modifier = modifier / clôturer / rouvrir), `DeliveryLine` (Lire = suivi, stats · Créer = saisir · Modifier = corriger · Supprimer = annuler).
+
+Fichiers : `app/(dashboard)/livraisons/*`, `components/resources/delivery/*`, `lib/resources/delivery.ts`, `Sidebar.tsx`, `ability.ts`, `permission-matrix.ts`.
+
+Règles métier : ADR-0014 du backend (`chatbot-backend/docs/adr/0014-module-livraisons-clients-cumul-calcule-depuis-les-lignes.md`).

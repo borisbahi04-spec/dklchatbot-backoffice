@@ -382,6 +382,8 @@ function CashPointsTab({
       <ConfirmDialog
         open={!!validateTarget}
         title="Valider le point de caisse"
+        confirmLabel="Confirmer"
+        confirmVariant="primary"
         message={
           validateTarget
             ? `Valider le point du ${formatDay(validateTarget.date)} (${validateTarget.logisticCenter?.code ?? ""}) — retour en caisse ${formatMoney(validateTarget.cashReturn)} ? Une fois validé, il compte dans l'inventaire général et ne peut plus être modifié.`

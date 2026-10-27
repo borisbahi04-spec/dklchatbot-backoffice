@@ -328,6 +328,15 @@ export interface Ticket extends BaseEntity {
   typeProduit?: string;
   codeCl?: string;
   cl?: string;
+  // AJOUTÉ (demande Boris, 26/10/2026) : champs de vw_bobrain_ticket_view_v7.
+  village?: string;
+  cooperative?: string;
+  secteur?: string;
+  codeEncadrement?: string;
+  /** true = annulé (null tant que la synchro n'est pas repassée). */
+  ticketAnnule?: boolean | null;
+  /** true = validé. */
+  ticketValide?: boolean | null;
   poidsEntree?: number;
   poidsSortie?: number;
   poidsNet?: number;
@@ -468,6 +477,11 @@ export interface TicketDirectAndCashPurchaseFilters {
   beneficiaireTransport?: string;
   // AJOUTÉ (demande Boris, 20/09/2026) : centre logistique -- correspondance partielle, même famille que nomPlanteur/nomTransporteur.
   cl?: string;
+  // AJOUTÉ (demande Boris, 26/10/2026) : localisation planteur (partielle) + code encadrement (exact).
+  village?: string;
+  cooperative?: string;
+  secteur?: string;
+  codeEncadrement?: string;
   // Intervalles min/max
   poidsEntreeMin?: number;
   poidsEntreeMax?: number;
@@ -548,7 +562,9 @@ export interface TicketDirectAndCashPurchaseFilters {
     | "tricycle-overweight"
     // AJOUTÉ (demande Boris, 21/09/2026, "monthly-purchase") -- voir
     // TicketService.exportTicketsToExcel.
-    | "monthly-purchase";
+    | "monthly-purchase"
+    // AJOUTÉ 26/10/2026 : onglet "Tickets annulés".
+    | "cancelled";
   [key: string]: string | number | string[] | undefined;
 }
 
@@ -879,6 +895,10 @@ export type QuarterlyBonusParams = {
   origine?: string;
   typeOperation?: string;
   codeTransporteur?: string;
+  // AJOUTÉ 26/10/2026
+  village?: string;
+  secteur?: string;
+  cooperative?: string;
 };
 
 export interface QuarterlyBonusMonth {
@@ -891,6 +911,10 @@ export interface QuarterlyBonusRow {
   rang: number;
   codePlanteur: string;
   nomPlanteur: string | null;
+  /** AJOUTÉ 26/10/2026 : valeur la plus fréquente du planteur sur la période. */
+  village: string | null;
+  secteur: string | null;
+  cooperative: string | null;
   /** Pas de source ERP pour l'instant -> toujours null (à renseigner dans l'Excel). */
   filiation: string | null;
   mois: number[];

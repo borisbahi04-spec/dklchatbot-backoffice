@@ -173,7 +173,7 @@ export function RoleFormModal({
       open={open}
       onClose={onClose}
       title={role ? "Modifier le rôle" : "Nouveau rôle"}
-      size="lg"
+      size="xl"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>

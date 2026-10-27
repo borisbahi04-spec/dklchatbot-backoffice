@@ -207,6 +207,14 @@ export const ticketsApi = {
     apiClient.get<TicketListResponse<Ticket>>("/ticket/tricycle-overweight", { params }),
 
   /**
+   * Onglet "Tickets annulés" -- `GET /ticket/cancelled` (demande de Boris,
+   * 26/10/2026). Le backend force ticketAnnule = 1 ; tous les autres onglets
+   * ne renvoient que les tickets actifs (ticketValide = 1 et ticketAnnule = 0).
+   */
+  cancelled: (params?: TicketDirectAndCashPurchaseFilters) =>
+    apiClient.get<TicketListResponse<Ticket>>("/ticket/cancelled", { params }),
+
+  /**
    * `GET /ticket/monthly-purchase-summary` -- une ligne PAR MOIS (pivot sur
    * dateEntree), voir `MonthlyPurchaseResponse` et
    * `TicketService.getMonthlyPurchaseSummary` côté backend. Fonction gardée

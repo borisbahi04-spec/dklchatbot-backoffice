@@ -35,6 +35,23 @@ export const MATRIX_ENTITIES: { value: EntityAbility; label: string }[] = [
     value: EntityAbility.PLANTER_RECONCILIATION,
     label: "Engrais & plants — Lire : importer les listes et factures, analyser et télécharger",
   },
+  { value: EntityAbility.FUEL_TANK, label: "Carburant › Cuves (stock initial, capacité)" },
+  { value: EntityAbility.FUEL_VEHICLE, label: "Carburant › Véhicules (internes / externes)" },
+  {
+    value: EntityAbility.FUEL_MOVEMENT,
+    label: "Carburant › Mouvements — Lire : stock, point mensuel, statistiques · Créer : saisir · Supprimer : annuler",
+  },
+  { value: EntityAbility.FUEL_GAUGING, label: "Carburant › Jaugeages" },
+  { value: EntityAbility.DELIVERY_CUSTOMER, label: "Livraisons › Clients" },
+  { value: EntityAbility.DELIVERY_PRODUCT, label: "Livraisons › Produits (tourteau, rafle…)" },
+  {
+    value: EntityAbility.DELIVERY_ORDER,
+    label: "Livraisons › Commandes (B.A.L) — Modifier : modifier, clôturer, rouvrir · Supprimer : sans livraison",
+  },
+  {
+    value: EntityAbility.DELIVERY_LINE,
+    label: "Livraisons › Lignes de livraison — Lire : suivi, statistiques · Créer : saisir · Modifier : corriger · Supprimer : annuler",
+  },
   {
     value: EntityAbility.ASSISTANT,
     label: "Assistant IA — Lire : accéder à l'assistant (domaines : « Diffuser » sur chaque entité)",
@@ -54,6 +71,7 @@ export const MATRIX_ENTITIES: { value: EntityAbility; label: string }[] = [
   { value: EntityAbility.TICKET_TAB_SUPPLIER_ACTIVITY, label: "Tickets › onglet « Analyse d'activité planteurs »" },
   { value: EntityAbility.TICKET_TAB_TRANSPORTER_ACTIVITY, label: "Tickets › onglet « Analyse d'activité transporteurs »" },
   { value: EntityAbility.TICKET_TAB_QUARTERLY_BONUS, label: "Tickets › onglet « Bonus trimestriel »" },
+  { value: EntityAbility.TICKET_TAB_CANCELLED, label: "Tickets › onglet « Tickets annulés »" },
 ];
 
 /** Colonnes du tableau : une par action CASL (voir `UserAction`). */

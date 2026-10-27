@@ -10,6 +10,8 @@ export function ConfirmDialog({
   isLoading,
   onConfirm,
   onCancel,
+  confirmLabel = "Supprimer",
+  confirmVariant = "danger",
 }: {
   open: boolean;
   title: string;
@@ -17,6 +19,9 @@ export function ConfirmDialog({
   isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Texte du bouton de confirmation (par défaut « Supprimer »). */
+  confirmLabel?: string;
+  confirmVariant?: "primary" | "danger";
 }) {
   if (!open) return null;
   return (
@@ -30,8 +35,8 @@ export function ConfirmDialog({
           <Button variant="secondary" onClick={onCancel}>
             Annuler
           </Button>
-          <Button variant="danger" onClick={onConfirm} isLoading={isLoading}>
-            Supprimer
+          <Button variant={confirmVariant} onClick={onConfirm} isLoading={isLoading}>
+            {confirmLabel}
           </Button>
         </>
       }

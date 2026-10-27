@@ -49,6 +49,7 @@ type TabKey =
   | "pi-pv"
   | "flash"
   | "tricycle"
+  | "cancelled"
   | "purchase-summary"
   | "paid"
   | "supplier-activity"
@@ -82,6 +83,10 @@ const tabs: { key: TabKey; label: string; subject: EntityAbility }[] = [
   // AJOUTÉ (demande Boris, 20/09/2026) : tickets tricycle en surcharge (poids
   // net >= seuil configurable, voir Réglages / poidsNetSeuilTricycle).
   { key: "tricycle", label: "Tickets tricycle", subject: EntityAbility.TICKET_TAB_TRICYCLE },
+  // AJOUTÉ (demande Boris, 26/10/2026) : liste des tickets annulés
+  // (ticketAnnule = 1). Tous les autres onglets ne montrent plus que les
+  // tickets actifs (ticketValide = 1 et ticketAnnule = 0, filtre backend).
+  { key: "cancelled", label: "Tickets annulés", subject: EntityAbility.TICKET_TAB_CANCELLED },
   // AJOUTÉ (demande Boris, 20/09/2026) : reprend la présentation "une ligne
   // par mois" de l'ancien onglet "Achat mensuel", mais pour achat direct /
   // achat comptant / achat direct ET comptant (sélecteur de type -- un seul
@@ -128,6 +133,7 @@ const TAB_TO_EXPORT_VALUE: Partial<Record<TabKey, NonNullable<TicketDirectAndCas
   "direct-purchase": "direct-purchase",
   "direct-and-cash": "direct-and-cash-purchase",
   tricycle: "tricycle-overweight",
+  cancelled: "cancelled", // AJOUTÉ 26/10/2026
   // MISE À JOUR 21/09/2026 (demande Boris, "monthly-purchase") : l'export
   // Excel de cet onglet doit respecter le même filtre forcé
   // (`prixRegimeTypeOption` = 'ACHAT MENSUEL') que la liste -- voir la note
@@ -152,6 +158,10 @@ const baseColumns: Column<Ticket & { id: string }>[] = [
   { header: "Code CL", cell: (r) => (r.codeCl as string) || "—" },
   { header: "Centre logistique", cell: (r) => (r.cl as string) || "—" },
   { header: "Planteur", cell: (r) => (r.nomPlanteur as string) || (r.codePlanteur as string) || "—" },
+  // AJOUTÉ (demande Boris, 26/10/2026) : vw_bobrain_ticket_view_v7.
+  { header: "Village", cell: (r) => (r.village as string) || "—" },
+  { header: "Secteur", cell: (r) => (r.secteur as string) || "—" },
+  { header: "Coopérative", cell: (r) => (r.cooperative as string) || "—" },
   { header: "Camion", cell: (r) => (r.camion as string) || "—" },
   { header: "Type véhicule", cell: (r) => (r.typeVehicule as string) || "—" },
   { header: "Chauffeur", cell: (r) => (r.nomChauffeur as string) || "—" },
@@ -206,6 +216,11 @@ const TEXT_FIELDS: { key: string; label: string }[] = [
   { key: "codeArticle", label: "Code article" },
   { key: "codeCl", label: "Code CL" },
   { key: "cl", label: "Centre Logistique" },
+  // AJOUTÉ (demande Boris, 26/10/2026)
+  { key: "village", label: "Village" },
+  { key: "secteur", label: "Secteur" },
+  { key: "cooperative", label: "Coopérative" },
+  { key: "codeEncadrement", label: "Code encadrement" },
   { key: "camion", label: "Camion" },
   { key: "nomChauffeur", label: "Nom chauffeur" },
   { key: "codeTransporteur", label: "Code transporteur" },
@@ -511,6 +526,7 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
         else if (tab === "duration-over-one-day") res = await ticketsApi.durationOverOneDay(common);
         else if (tab === "direct-purchase") res = await ticketsApi.directPurchase(common);
         else if (tab === "tricycle") res = await ticketsApi.tricycleOverweight(common);
+        else if (tab === "cancelled") res = await ticketsApi.cancelled(common);
         // "Achat mensuel" -- endpoint dédié `GET /ticket/monthly-purchase`
         // depuis le 21/09/2026 (voir la note sur `tabs` plus haut, demande
         // de Boris "monthly-purchase cree un lien api pour ca et connecte
@@ -898,6 +914,12 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
         <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
           Tickets tricycle dont le poids net atteint ou dépasse le seuil défini dans Réglages
           (clé « Seuil poids net tricycle (kg) », 2 500 kg par défaut).
+        </p>
+      )}
+      {tab === "cancelled" && (
+        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          Tickets annulés dans l&apos;ERP. Ils sont exclus de tous les autres onglets, des tableaux
+          croisés, des résumés et du bonus trimestriel.
         </p>
       )}
 

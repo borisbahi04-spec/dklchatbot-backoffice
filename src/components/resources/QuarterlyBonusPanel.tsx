@@ -49,6 +49,9 @@ type Filters = {
   origine: string;
   typeOperation: string;
   codeTransporteur: string;
+  village: string;
+  secteur: string;
+  cooperative: string;
 };
 
 const EMPTY_FILTERS: Filters = {
@@ -60,10 +63,25 @@ const EMPTY_FILTERS: Filters = {
   origine: "",
   typeOperation: "",
   codeTransporteur: "",
+  village: "",
+  secteur: "",
+  cooperative: "",
 };
 
 /** Clé de tri : colonne fixe ou index de mois ("m0", "m1"...). */
-type SortKey = "rang" | "codePlanteur" | "nomPlanteur" | "cumul" | "montantBonus" | `m${number}`;
+type SortKey =
+  | "rang"
+  | "codePlanteur"
+  | "nomPlanteur"
+  | "village"
+  | "secteur"
+  | "cooperative"
+  | "cumul"
+  | "montantBonus"
+  | `m${number}`;
+
+/** Colonnes texte (tri ascendant par défaut). */
+const TEXT_SORT_KEYS: SortKey[] = ["rang", "codePlanteur", "nomPlanteur", "village", "secteur", "cooperative"];
 
 export function QuarterlyBonusPanel() {
   const today = useMemo(() => new Date(), []);
@@ -110,6 +128,9 @@ export function QuarterlyBonusPanel() {
     if (filters.origine.trim()) p.origine = filters.origine.trim();
     if (filters.typeOperation) p.typeOperation = filters.typeOperation;
     if (filters.codeTransporteur.trim()) p.codeTransporteur = filters.codeTransporteur.trim();
+    if (filters.village.trim()) p.village = filters.village.trim();
+    if (filters.secteur.trim()) p.secteur = filters.secteur.trim();
+    if (filters.cooperative.trim()) p.cooperative = filters.cooperative.trim();
     return p;
   }
 
@@ -165,7 +186,7 @@ export function QuarterlyBonusPanel() {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
       setSortKey(key);
-      setSortDir(key === "rang" || key === "codePlanteur" || key === "nomPlanteur" ? "asc" : "desc");
+      setSortDir(TEXT_SORT_KEYS.includes(key) ? "asc" : "desc");
     }
     setPage(1);
   }
@@ -338,6 +359,14 @@ export function QuarterlyBonusPanel() {
               onChange={(e) => updateFilter("codeTransporteur", e.target.value)}
               className="max-w-[160px]"
             />
+            <Input label="Village" value={filters.village} onChange={(e) => updateFilter("village", e.target.value)} className="max-w-[160px]" />
+            <Input label="Secteur" value={filters.secteur} onChange={(e) => updateFilter("secteur", e.target.value)} className="max-w-[160px]" />
+            <Input
+              label="Coopérative"
+              value={filters.cooperative}
+              onChange={(e) => updateFilter("cooperative", e.target.value)}
+              className="max-w-[180px]"
+            />
           </div>
         )}
       </div>
@@ -367,12 +396,16 @@ export function QuarterlyBonusPanel() {
               <th className={`${thCls} text-left`} onClick={() => toggleSort("nomPlanteur")}>
                 <span className="inline-flex items-center gap-1">Nom &amp; prénoms planteurs <SortIcon k="nomPlanteur" /></span>
               </th>
-              <th
-                className="whitespace-nowrap border-b border-slate-200 bg-yellow-200 px-3 py-2 text-left font-semibold text-slate-900 dark:border-slate-800 dark:bg-yellow-700 dark:text-white"
-                title="Coopérative / Acheteurs / Usagers -- pas de source dans les données ERP, à renseigner dans l'Excel exporté"
-              >
-                Filiation
+              <th className={`${thCls} text-left`} onClick={() => toggleSort("village")}>
+                <span className="inline-flex items-center gap-1">Village <SortIcon k="village" /></span>
               </th>
+              <th className={`${thCls} text-left`} onClick={() => toggleSort("secteur")}>
+                <span className="inline-flex items-center gap-1">Secteur <SortIcon k="secteur" /></span>
+              </th>
+              <th className={`${thCls} text-left`} onClick={() => toggleSort("cooperative")}>
+                <span className="inline-flex items-center gap-1">Coopérative <SortIcon k="cooperative" /></span>
+              </th>
+              
               {(data?.months ?? []).map((m, i) => (
                 <th key={m.key} className={`${thCls} text-right`} onClick={() => toggleSort(`m${i}`)}>
                   <span className="inline-flex items-center gap-1">{m.shortLabel} <SortIcon k={`m${i}`} /></span>
@@ -391,7 +424,7 @@ export function QuarterlyBonusPanel() {
           <tbody className={isLoading ? "opacity-50" : undefined}>
             {pageRows.length === 0 ? (
               <tr>
-                <td colSpan={6 + (data?.months.length ?? 3)} className="px-3 py-8 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={9 + (data?.months.length ?? 3)} className="px-3 py-8 text-center text-slate-500 dark:text-slate-400">
                   {isLoading ? "Chargement…" : "Aucun planteur pour ces critères."}
                 </td>
               </tr>
@@ -401,7 +434,9 @@ export function QuarterlyBonusPanel() {
                   <td className="px-3 py-2 text-center text-slate-500">{r.rang}</td>
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{r.codePlanteur}</td>
                   <td className="whitespace-nowrap px-3 py-2">{r.nomPlanteur ?? "—"}</td>
-                  <td className="px-3 py-2 text-slate-400">{r.filiation ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{r.village ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{r.secteur ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2">{r.cooperative ?? "—"}</td>
                   {r.mois.map((v, i) => (
                     <td key={i} className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
                       {v ? num(v) : <span className="text-slate-300 dark:text-slate-600">0</span>}
@@ -416,7 +451,7 @@ export function QuarterlyBonusPanel() {
           {data && data.rows.length > 0 && (
             <tfoot className="border-t-2 border-slate-300 bg-slate-50 font-semibold dark:border-slate-700 dark:bg-slate-900">
               <tr>
-                <td className="px-3 py-2" colSpan={4}>
+                <td className="px-3 py-2" colSpan={7}>
                   Total ({data.totals.planteurs} planteurs)
                 </td>
                 {data.totals.mois.map((v, i) => (
