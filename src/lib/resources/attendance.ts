@@ -13,6 +13,8 @@ import type { BaseEntity, ListQueryParams, Paginated } from "../types";
 export type PunchType = "IN" | "BREAK_START" | "BREAK_END" | "OUT";
 export type PunchSource = "KIOSK" | "MANUAL";
 export type PunchStatus = "active" | "cancelled";
+/** Pause / sortie avant l'heure au plus tôt : refusée à la pointeuse, ou acceptée (départ anticipé). */
+export type EarlyExitPolicy = "REFUSE" | "ACCEPT";
 export type DayStatus = "PRESENT" | "IN_PROGRESS" | "ON_BREAK" | "INCOMPLETE" | "ABSENT" | "NOT_YET" | "REST" | "FUTURE";
 
 export const PUNCH_TYPE_LABEL: Record<PunchType, string> = {
@@ -102,6 +104,11 @@ export interface AttendanceGroup extends BaseEntity {
   lateToleranceMinutes: number;
   earlyLeaveToleranceMinutes: number;
   duplicateScanMinutes: number;
+  earliestInTime?: string | null;
+  earliestBreakStartTime?: string | null;
+  earliestOutTime?: string | null;
+  earlyExitPolicy: EarlyExitPolicy;
+  overtimeThresholdMinutes: number;
   isActive: boolean;
   description?: string | null;
   employeeCount?: number;
@@ -120,6 +127,11 @@ export interface CreateAttendanceGroupDto {
   lateToleranceMinutes?: number;
   earlyLeaveToleranceMinutes?: number;
   duplicateScanMinutes?: number;
+  earliestInTime?: string | null;
+  earliestBreakStartTime?: string | null;
+  earliestOutTime?: string | null;
+  earlyExitPolicy?: EarlyExitPolicy;
+  overtimeThresholdMinutes?: number;
   isActive?: boolean;
   description?: string;
 }
@@ -227,6 +239,8 @@ export interface DayRow {
   lateMinutes: number;
   earlyLeaveMinutes: number;
   overtimeMinutes: number;
+  earlyArrivalMinutes: number;
+  uncountedAfterEndMinutes: number;
   firstIn: string | null;
   lastOut: string | null;
   breakStartAt: string | null;
@@ -294,7 +308,7 @@ export interface PeriodParams {
 
 // --- Pointeuse ----------------------------------------------------------------------
 
-export type KioskResult = "OK" | "DUPLICATE" | "UNKNOWN_CARD" | "INACTIVE";
+export type KioskResult = "OK" | "DUPLICATE" | "UNKNOWN_CARD" | "INACTIVE" | "TOO_EARLY";
 
 export interface KioskScanResponse {
   result: KioskResult;

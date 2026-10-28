@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DataTable, Pagination, type Column } from "@/components/ui/DataTable";
-import { Checkbox, Input, Textarea } from "@/components/ui/Input";
+import { Checkbox, Input, Select, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { useResource } from "@/lib/hooks/useResource";
 import { useAbility } from "@/lib/permissions/AbilityContext";
@@ -105,6 +105,11 @@ const EMPTY: CreateAttendanceGroupDto = {
   lateToleranceMinutes: 5,
   earlyLeaveToleranceMinutes: 5,
   duplicateScanMinutes: 2,
+  earliestInTime: "",
+  earliestBreakStartTime: "",
+  earliestOutTime: "",
+  earlyExitPolicy: "ACCEPT",
+  overtimeThresholdMinutes: 30,
   isActive: true,
   description: "",
 };
@@ -147,6 +152,11 @@ function GroupFormModal({
         lateToleranceMinutes: group.lateToleranceMinutes,
         earlyLeaveToleranceMinutes: group.earlyLeaveToleranceMinutes,
         duplicateScanMinutes: group.duplicateScanMinutes,
+        earliestInTime: group.earliestInTime ?? "",
+        earliestBreakStartTime: group.earliestBreakStartTime ?? "",
+        earliestOutTime: group.earliestOutTime ?? "",
+        earlyExitPolicy: group.earlyExitPolicy ?? "ACCEPT",
+        overtimeThresholdMinutes: group.overtimeThresholdMinutes ?? 30,
         isActive: group.isActive,
         description: group.description ?? "",
       });
@@ -184,6 +194,10 @@ function GroupFormModal({
       lateToleranceMinutes: Number(form.lateToleranceMinutes) || 0,
       earlyLeaveToleranceMinutes: Number(form.earlyLeaveToleranceMinutes) || 0,
       duplicateScanMinutes: Number(form.duplicateScanMinutes) || 0,
+      earliestInTime: form.earliestInTime || null,
+      earliestBreakStartTime: form.trackBreak && form.earliestBreakStartTime ? form.earliestBreakStartTime : null,
+      earliestOutTime: form.earliestOutTime || null,
+      overtimeThresholdMinutes: Number(form.overtimeThresholdMinutes) || 0,
     });
   }
 
@@ -325,6 +339,57 @@ function GroupFormModal({
           value={form.duplicateScanMinutes ?? 0}
           onChange={(e) => set("duplicateScanMinutes", Number(e.target.value))}
         />
+        <div className="sm:col-span-2 mt-2 border-t border-slate-200 pt-4 dark:border-slate-700">
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">Plages de pointage (heures au plus tôt)</span>
+          <p className="mt-1 text-xs text-slate-500">
+            Laisser vide = pas de limite. Règles de calcul : une arrivée avant le début n&apos;est pas comptée (le temps démarre à l&apos;heure de
+            début) ; un retard ou un départ dans la tolérance est considéré à l&apos;heure ; après l&apos;heure de fin, le temps n&apos;est compté en
+            heures supplémentaires qu&apos;à partir du seuil.
+          </p>
+        </div>
+        <Input
+          label="Entrée possible à partir de"
+          type="time"
+          hint={`Avant : la pointeuse refuse. Début ${form.startTime || "—"}.`}
+          value={form.earliestInTime ?? ""}
+          onChange={(e) => set("earliestInTime", e.target.value)}
+        />
+        {form.trackBreak ? (
+          <Input
+            label="Pause possible à partir de"
+            type="time"
+            hint={`Au plus tard au début de pause prévu (${form.breakStart || "—"}).`}
+            value={form.earliestBreakStartTime ?? ""}
+            onChange={(e) => set("earliestBreakStartTime", e.target.value)}
+          />
+        ) : (
+          <div className="hidden sm:block" />
+        )}
+        <Input
+          label="Sortie possible à partir de"
+          type="time"
+          hint={`Fin ${form.endTime || "—"}.`}
+          value={form.earliestOutTime ?? ""}
+          onChange={(e) => set("earliestOutTime", e.target.value)}
+        />
+        <Select
+          label="Pause / sortie avant l'heure au plus tôt"
+          value={form.earlyExitPolicy ?? "ACCEPT"}
+          onChange={(e) => set("earlyExitPolicy", e.target.value as CreateAttendanceGroupDto["earlyExitPolicy"])}
+          hint="Refusée : les RH saisiront la sortie exceptionnelle."
+        >
+          <option value="ACCEPT">Acceptée (départ anticipé signalé)</option>
+          <option value="REFUSE">Refusée à la pointeuse</option>
+        </Select>
+        <Input
+          label="Seuil des heures sup. (min)"
+          type="number"
+          min={0}
+          hint="Temps après la fin compté seulement à partir de ce seuil (0 = dès la 1re minute)."
+          value={form.overtimeThresholdMinutes ?? 0}
+          onChange={(e) => set("overtimeThresholdMinutes", Number(e.target.value))}
+        />
+
         <div className="sm:col-span-2 rounded-md bg-slate-50 p-3 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
           Temps de travail prévu : <strong>{Math.floor((span - breakMin) / 60)}h{String((span - breakMin) % 60).padStart(2, "0")}</strong> par jour
           {breakMin ? ` (amplitude ${Math.floor(span / 60)}h${String(span % 60).padStart(2, "0")} − pause ${breakMin} min)` : ""}.

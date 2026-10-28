@@ -159,6 +159,7 @@ export function AttendanceReportPanel({ groups, employees }: { groups: Attendanc
               { label: "Employé", align: "left" },
               { label: "Statut", align: "left" },
               { label: "Entrée" },
+              { label: "Avance non comptée" },
               { label: "Pause" },
               { label: "Sortie" },
               { label: "Travaillé" },
@@ -178,6 +179,9 @@ export function AttendanceReportPanel({ groups, employees }: { groups: Attendanc
               </span>,
               <DayStatusBadge key="s" status={r.status} late={r.lateMinutes} />,
               hhmm(first(r, "IN")),
+              <span key="ea" className="text-slate-500">
+                {formatMinutes(r.earlyArrivalMinutes)}
+              </span>,
               first(r, "BREAK_START") ? `${hhmm(first(r, "BREAK_START"))} → ${hhmm(last(r, "BREAK_END"))}` : r.breakDeductedMinutes ? `−${r.breakDeductedMinutes} min` : "—",
               hhmm(last(r, "OUT")),
               r.punchCount ? formatMinutes(r.workedMinutes, true) : "—",
@@ -185,7 +189,10 @@ export function AttendanceReportPanel({ groups, employees }: { groups: Attendanc
               red(r.lateMinutes),
               red(r.earlyLeaveMinutes),
               red(r.breakOverMinutes),
-              formatMinutes(r.overtimeMinutes),
+              <span key="ot" title={r.uncountedAfterEndMinutes ? `${formatMinutes(r.uncountedAfterEndMinutes)} après la fin, sous le seuil : non comptées` : undefined}>
+                {formatMinutes(r.overtimeMinutes)}
+                {r.uncountedAfterEndMinutes ? <span className="ml-1 text-xs text-slate-400">(+{formatMinutes(r.uncountedAfterEndMinutes)} n.c.)</span> : null}
+              </span>,
               <span key="a" className="text-xs text-red-600">
                 {r.anomalies.join(" ; ")}
               </span>,

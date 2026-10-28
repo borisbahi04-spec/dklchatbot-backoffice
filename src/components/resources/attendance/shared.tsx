@@ -78,7 +78,12 @@ export function scheduleText(g?: AttendanceGroup | null): string {
     days.length === 7 ? "Tous les jours" : days.length === 5 && !g.workDays.includes(6) && !g.workDays.includes(7) ? "Lun–Ven" : days.join(" ");
   const night = g.endTime <= g.startTime ? " (nuit)" : "";
   const pause = g.breakStart && g.breakEnd ? ` · pause ${g.breakStart}–${g.breakEnd}` : g.breakMinutes ? ` · pause ${g.breakMinutes} min` : "";
-  return `${daysText} · ${g.startTime}–${g.endTime}${night}${pause}${g.trackBreak ? " (pointée)" : ""}`;
+  const earliest = [
+    g.earliestInTime ? `entrée dès ${g.earliestInTime}` : "",
+    g.earliestBreakStartTime ? `pause dès ${g.earliestBreakStartTime}` : "",
+    g.earliestOutTime ? `sortie dès ${g.earliestOutTime}` : "",
+  ].filter(Boolean);
+  return `${daysText} · ${g.startTime}–${g.endTime}${night}${pause}${g.trackBreak ? " (pointée)" : ""}${earliest.length ? ` · ${earliest.join(", ")}` : ""}`;
 }
 
 export const employeeLabel = (e?: { matricule?: string; lastName?: string; firstName?: string } | null) =>

@@ -22,10 +22,13 @@ export const MATRIX_ENTITIES: { value: EntityAbility; label: string }[] = [
   { value: EntityAbility.SETTING, label: "Paramètres" },
   { value: EntityAbility.EXPORTER, label: "Exports" },
   { value: EntityAbility.LOGISTIC_CENTER, label: "Centres logistiques" },
-  { value: EntityAbility.CASH_POINT, label: "Points de caisse (les siens)" },
+  {
+    value: EntityAbility.CASH_POINT,
+    label: "Points de caisse (les siens) — Modifier : modifier, valider et annuler ses points",
+  },
   {
     value: EntityAbility.CASH_POINT_ALL,
-    label: "Points de caisse (tous) — Lire : voir tous · Modifier : annuler un validé",
+    label: "Points de caisse (tous) — Lire : voir tous · Modifier : annuler/agir sur ceux des autres",
   },
   {
     value: EntityAbility.SUPPLIER_LEDGER,

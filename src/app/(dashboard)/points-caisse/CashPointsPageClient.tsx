@@ -194,7 +194,9 @@ function CashPointsTab({
     p.status === "draft" && ((isOwner(p) && ability.can(UserAction.Edit, OWN)) || canSuperviseEdit);
   const canDeleteDraft = (p: CashPoint) =>
     p.status === "draft" && ((isOwner(p) && ability.can(UserAction.Delete, OWN)) || canSuperviseEdit);
-  const canCancel = (p: CashPoint) => p.status === "validated" && canSuperviseEdit;
+  const canCancel = (p: CashPoint) =>
+    p.status === "validated" &&
+    ((isOwner(p) && ability.can(UserAction.Edit, OWN)) || canSuperviseEdit);
 
   async function run(action: () => Promise<unknown>, success: string, after?: () => void) {
     setBusy(true);

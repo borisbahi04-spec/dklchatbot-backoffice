@@ -643,6 +643,7 @@ Page `/pointage` (lien « Pointage » dans la Sidebar), onglets affichés selon 
 - **Rapports** : période ≤ 93 jours, synthèse par employé (jours, absences, retards, départs anticipés, dépassement de pause, heures travaillées et sup.) et détail par jour — Excel (avec heures en décimal pour la paie) et PDF ;
 - **Employés et cartes** : inscription (photo webcam ou fichier), impression des cartes QR (sélection, groupe ou tous ; 10 cartes par A4, format carte bancaire), « Nouvelle carte » en cas de perte ;
 - **Groupes et horaires** : mode « entrée / sortie » ou « entrée / pause / retour / sortie », jours, horaires (équipe de nuit possible), pause, tolérances, anti-doublon.
+  Plages de pointage (28/10/2026) : heures au plus tôt d'entrée (avant : « Trop tôt », refusé), de pause et de sortie (avant : refusé ou accepté en départ anticipé, au choix du groupe) et seuil des heures sup. Calcul « standard pointeuse » : avance non comptée, retard / départ dans la tolérance considérés à l'heure, temps après la fin compté seulement au-delà du seuil (ADR-0015).
 
 Page `/pointeuse` (lien « Pointeuse ») : écran plein écran du PC de pointage, sans menu. La caméra lit le QR (`BarcodeDetector` ou `jsqr`), le serveur choisit l'action et l'écran affiche photo, nom, action, heure et retard éventuel (bip sonore). Une douchette USB fonctionne aussi. Réglages du poste (nom, caméra, son) gardés dans le navigateur.
 
