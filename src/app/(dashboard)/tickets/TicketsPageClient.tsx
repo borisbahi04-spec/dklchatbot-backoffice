@@ -15,6 +15,7 @@ import { MonthlyPurchaseTable } from "@/components/resources/MonthlyPurchaseTabl
 import { FlashPivotTable } from "@/components/resources/FlashPivotTable";
 import { SupplierActivityPanel } from "@/components/resources/SupplierActivityPanel";
 import { QuarterlyBonusPanel } from "@/components/resources/QuarterlyBonusPanel";
+import { DuplicateTicketsPanel } from "@/components/resources/DuplicateTicketsPanel";
 import { ticketsApi } from "@/lib/resources";
 import { ApiError } from "@/lib/api-client";
 import { useAbility } from "@/lib/permissions/AbilityContext";
@@ -50,6 +51,7 @@ type TabKey =
   | "flash"
   | "tricycle"
   | "cancelled"
+  | "duplicates"
   | "purchase-summary"
   | "paid"
   | "supplier-activity"
@@ -87,6 +89,9 @@ const tabs: { key: TabKey; label: string; subject: EntityAbility }[] = [
   // (ticketAnnule = 1). Tous les autres onglets ne montrent plus que les
   // tickets actifs (ticketValide = 1 et ticketAnnule = 0, filtre backend).
   { key: "cancelled", label: "Tickets annulés", subject: EntityAbility.TICKET_TAB_CANCELLED },
+  // AJOUTÉ (demande Boris, 30/10/2026) : même ticket planteur sur plusieurs
+  // lignes, avec suppression -- voir DuplicateTicketsPanel.tsx.
+  { key: "duplicates", label: "Doublons", subject: EntityAbility.TICKET_TAB_DUPLICATES },
   // AJOUTÉ (demande Boris, 20/09/2026) : reprend la présentation "une ligne
   // par mois" de l'ancien onglet "Achat mensuel", mais pour achat direct /
   // achat comptant / achat direct ET comptant (sélecteur de type -- un seul
@@ -447,7 +452,7 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
       setError(null);
       try {
         // Onglet "Analyse d'activité" : chargé par SupplierActivityPanel lui-même.
-        if (tab === "supplier-activity" || tab === "transporter-activity" || tab === "quarterly-bonus") return;
+        if (tab === "supplier-activity" || tab === "transporter-activity" || tab === "quarterly-bonus" || tab === "duplicates") return;
 
         // Onglet "PI & PV" -- forme de réponse totalement différente
         // (tableau croisé, pas une liste paginée de tickets) : chargé à part,
@@ -903,6 +908,8 @@ export function TicketsPageClient({ initialData }: { initialData?: TicketListRes
         </p>
       ) : tab === "quarterly-bonus" ? (
         <QuarterlyBonusPanel />
+      ) : tab === "duplicates" ? (
+        <DuplicateTicketsPanel />
       ) : tab === "supplier-activity" || tab === "transporter-activity" ? (
         <SupplierActivityPanel
           key={tab}

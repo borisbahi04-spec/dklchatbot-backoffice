@@ -1060,3 +1060,40 @@ export interface CashInventoryResponse {
   rows: CashInventoryRow[];
   totals: CashPointAmounts & CashPointTotals & { count: number };
 }
+
+/* =====================================================================
+   Onglet "Doublons" (30/10/2026) -- miroir de DuplicateTicketsResponse
+   (backend services/ticket/duplicate-tickets.ts). Doublon = même
+   ticketPlanteur sur plusieurs lignes.
+   ===================================================================== */
+export type DuplicateTicketsParams = {
+  page?: number;
+  limit?: number;
+  dateDebut?: string;
+  dateFin?: string;
+  search?: string;
+  codeCl?: string;
+  excludeCancelled?: boolean;
+};
+
+export type DuplicateTicketGroup = {
+  ticketPlanteur: string;
+  count: number;
+  premiereEntree: string | null;
+  derniereEntree: string | null;
+  tickets: (Ticket & { id: string })[];
+};
+
+export type DuplicateTicketsResponse = {
+  data: DuplicateTicketGroup[];
+  pagination: { page: number; limit: number; total: number; lastPage: number };
+  stats: { groupCount: number; ticketCount: number; surplusCount: number };
+};
+
+export type DeleteDuplicateTicketResponse = {
+  id: string;
+  ticket: string;
+  ticketPlanteur: string;
+  /** Lignes restantes pour ce ticket planteur après suppression. */
+  remaining: number;
+};

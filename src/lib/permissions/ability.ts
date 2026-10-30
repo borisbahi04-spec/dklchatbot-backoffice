@@ -108,6 +108,7 @@ export enum EntityAbility {
   TICKET_TAB_TRANSPORTER_ACTIVITY = "TicketTabTransporterActivity",
   TICKET_TAB_QUARTERLY_BONUS = "TicketTabQuarterlyBonus",
   TICKET_TAB_CANCELLED = "TicketTabCancelled", // Tickets annulés (26/10/2026)
+  TICKET_TAB_DUPLICATES = "TicketTabDuplicates", // Doublons de ticket planteur (30/10/2026)
 }
 
 /** Actions CASL, reprises de l'enum `UserAction` de l'ancien projet. */

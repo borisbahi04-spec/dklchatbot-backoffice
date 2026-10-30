@@ -26,6 +26,9 @@ import type {
   PiPvPivotResponse,
   Role,
   QuarterlyBonusParams,
+  DuplicateTicketsParams,
+  DuplicateTicketsResponse,
+  DeleteDuplicateTicketResponse,
   QuarterlyBonusResponse,
   Setting,
   SupplierActivityParams,
@@ -422,6 +425,14 @@ export const ticketsApi = {
     const blob = await apiClient.getBlob("/ticket/quarterly-bonus/export/pdf", { params });
     downloadBlob(blob, filename);
   },
+
+  /** Onglet "Doublons" (30/10/2026) -- ticketPlanteur présent sur plusieurs lignes, groupés. */
+  duplicates: (params: DuplicateTicketsParams) =>
+    apiClient.get<DuplicateTicketsResponse>("/ticket/duplicates", { params }),
+
+  /** Suppression (logique) d'une ligne en double -- refusée si c'est la dernière du ticket planteur. */
+  deleteDuplicate: (id: string) =>
+    apiClient.delete<DeleteDuplicateTicketResponse>(`/ticket/duplicates/${id}`),
 
   /**
    * Export Excel (.xlsx) -- `GET /ticket/export/excel`, mêmes filtres que

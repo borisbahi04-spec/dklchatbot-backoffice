@@ -85,6 +85,10 @@ export const MATRIX_ENTITIES: { value: EntityAbility; label: string }[] = [
   { value: EntityAbility.TICKET_TAB_TRANSPORTER_ACTIVITY, label: "Tickets › onglet « Analyse d'activité transporteurs »" },
   { value: EntityAbility.TICKET_TAB_QUARTERLY_BONUS, label: "Tickets › onglet « Bonus trimestriel »" },
   { value: EntityAbility.TICKET_TAB_CANCELLED, label: "Tickets › onglet « Tickets annulés »" },
+  {
+    value: EntityAbility.TICKET_TAB_DUPLICATES,
+    label: "Tickets › onglet « Doublons » — Lire : voir les doublons · Supprimer : supprimer une ligne en double",
+  },
 ];
 
 /** Colonnes du tableau : une par action CASL (voir `UserAction`). */
